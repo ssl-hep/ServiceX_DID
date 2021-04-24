@@ -6,10 +6,14 @@ authors = ["Gordon Watts <gwatts@uw.edu>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+pika = "1.1.0"
+make-it-sync = "^1.0.0"
+requests = "^2.25.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 flake8 = "^3.9.1"
+pytest-mock = "^3.5.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
