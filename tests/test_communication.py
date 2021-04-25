@@ -1,5 +1,3 @@
-from _pytest.fixtures import yield_fixture
-import pika
 import pytest
 from unittest.mock import patch, MagicMock
 import json
@@ -19,7 +17,8 @@ class RabbitAdaptor:
         channel = MagicMock()
         method = MagicMock()
         properties = MagicMock()
-        body = json.dumps({'did': did_name, 'request_id': '000-111-222-444', 'service-endpoint': 'http://localhost:2334'})
+        body = json.dumps({'did': did_name, 'request_id': '000-111-222-444',
+                           'service-endpoint': 'http://localhost:2334'})
 
         callback(channel, method, properties, body)
 
@@ -71,3 +70,7 @@ def test_one_file_call(rabbitmq, SXAdaptor):
 
     # Make sure callback was called
     assert seen_name == 'hi-there'
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_fileset_complete.assert_called_once()

@@ -1,13 +1,16 @@
 import argparse
+from datetime import datetime
 import json
 import logging
-import time
+from time import time
 from typing import Any, AsyncGenerator, Callable, Dict, Optional
 import sys
 import traceback
 
 import pika
 from make_it_sync import make_sync
+
+from servicex_did.did_summary import DIDSummary
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
@@ -20,16 +23,30 @@ QUEUE_NAME_POSTFIX = '_did_requests'
 
 
 async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, user_callback: UserDIDHandler):
-    file_count = 0
+    summary = DIDSummary(did)
+    start_time = datetime.now()
     async for file_info in user_callback(did):
-        file_count += 1
+
+        # Track the file, inject back into the system
+        summary.add_file(file_info)
         servicex.put_file_add(file_info)
-        if file_count == 1:
+        if summary.file_count == 1:
             servicex.post_preflight_check(file_info)
 
-    if file_count == 0:
+    # Simple error checking and reporting
+    if summary.file_count == 0:
         servicex.post_status_update(f'DID Finder found zero files for dataset {did}',
                                     severity='fatal')
+
+    servicex.put_fileset_complete(
+        {
+            "files": summary.file_count,
+            "files-skipped": summary.files_skipped,
+            "total-events": summary.total_events,
+            "total-bytes": summary.total_bytes,
+            "elapsed-time": int((datetime.now()-start_time).total_seconds())
+        }
+    )
 
 
 def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body):
