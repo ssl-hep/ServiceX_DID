@@ -36,5 +36,5 @@ jobs:
     - name: Report coverage using codecov
       if: github.event_name == 'push'
       run: |
-        poetry coverage report
+        poetry run coverage report
         # codecov --token=${{ secrets.CODECOV_TOKEN }}
