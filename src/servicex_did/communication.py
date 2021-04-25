@@ -130,6 +130,24 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
 def start_did_finder(did_name: str,
                      callback: UserDIDHandler,
                      parser: Optional[argparse.ArgumentParser] = None):
+    '''start_did_finder Start the DID finder
+
+    Top level method that starts the DID finder, hooking it up to rabbitmq queues, etc.,
+    and sets up the callback to be called each time ServiceX wants to render a DID into
+    files.
+
+    Once called this will not return unless it totally fails to connect to the rabbit
+    mq server (which must have been specified on the command line that started this).
+    If it can't return, then it will raise the appropriate exception.
+
+    Args:
+        did_name (str): Name of the DID finder (baked into the rabbit mq name)
+        callback (UserDIDHandler): Callback to handle the DID rendering requests
+        parser (Optional[argparse.ArgumentParser], optional): If you need to parse your own
+                                                              command line arguments, create
+                                                              an arg parser and pass it in.
+                                                              Defaults to None.
+    ''' 
     # Setup command line parsing
     parser = parser if parser is not None else argparse.ArgumentParser()
     parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store',
