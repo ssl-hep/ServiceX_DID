@@ -147,7 +147,7 @@ def start_did_finder(did_name: str,
                                                               command line arguments, create
                                                               an arg parser and pass it in.
                                                               Defaults to None.
-    ''' 
+    '''
     # Setup command line parsing
     parser = parser if parser is not None else argparse.ArgumentParser()
     parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store',
