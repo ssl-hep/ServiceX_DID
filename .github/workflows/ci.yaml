@@ -34,7 +34,8 @@ jobs:
       run: |
         poetry run coverage run -m --source=src pytest tests
     - name: Report coverage using codecov
-      if: github.event_name == 'push'
-      run: |
-        poetry run coverage report
-        # codecov --token=${{ secrets.CODECOV_TOKEN }}
+      if: github.event_name == 'push' && matrix.python-version == 3.8
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage.xml # optional
+        flags: unittests # optional

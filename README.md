@@ -30,4 +30,10 @@ Add the following back into the ci for publishing
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         tag: "${GITHUB_REF##*/}"
+
+
+      run: |
+        poetry run coverage report
+        # codecov --token=${{ secrets.CODECOV_TOKEN }}
+
 ```
