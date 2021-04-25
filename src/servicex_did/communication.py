@@ -38,15 +38,18 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, user_callback
         servicex.post_status_update(f'DID Finder found zero files for dataset {did}',
                                     severity='fatal')
 
+    elapsed_time = int((datetime.now()-start_time).total_seconds())
     servicex.put_fileset_complete(
         {
             "files": summary.file_count,
             "files-skipped": summary.files_skipped,
             "total-events": summary.total_events,
             "total-bytes": summary.total_bytes,
-            "elapsed-time": int((datetime.now()-start_time).total_seconds())
+            "elapsed-time": elapsed_time,
         }
     )
+
+    servicex.post_status_update(f'Completed load of file in {elapsed_time} seconds')
 
 
 def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body):
