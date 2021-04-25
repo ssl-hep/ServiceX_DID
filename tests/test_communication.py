@@ -1,5 +1,6 @@
+from typing import Any, AsyncGenerator, Dict
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import ANY, patch, MagicMock
 import json
 
 from servicex_did.communication import init_rabbit_mq
@@ -74,3 +75,42 @@ def test_one_file_call(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
+
+
+def test_failed_file(rabbitmq, SXAdaptor):
+    'Test a callback that fails before any files are sent'
+
+    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+        if False:
+            yield {
+                'ops': 'no'
+            }
+        raise Exception('that did not work')
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+    rabbitmq.send_did_request('hi-there')
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_not_called()
+    SXAdaptor.put_fileset_complete.assert_not_called()
+    SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')
+
+
+def test_no_files_returned(rabbitmq, SXAdaptor):
+    'Test a callback that fails before any files are sent'
+
+    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+        if False:
+            yield {
+                'ops': 'no'
+            }
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+    rabbitmq.send_did_request('hi-there')
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_not_called()
+    SXAdaptor.put_fileset_complete.assert_not_called()
+    SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')

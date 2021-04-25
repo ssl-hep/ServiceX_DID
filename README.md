@@ -4,10 +4,11 @@
 
 ## Left to do
 
-- Coverage/CI in github
-- Automatic push to pypi
-- look for all post_status_update calls in the original
 - In general - look for all calls back to the servicex object!
+- Write docs in here on how to use this
+- Automatic push to pypi
+
+## Notes to keep for a short while
 
 Add the following back into the ci for publishing
 

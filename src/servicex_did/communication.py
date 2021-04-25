@@ -37,19 +37,19 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, user_callback
     if summary.file_count == 0:
         servicex.post_status_update(f'DID Finder found zero files for dataset {did}',
                                     severity='fatal')
+    else:
+        elapsed_time = int((datetime.now()-start_time).total_seconds())
+        servicex.put_fileset_complete(
+            {
+                "files": summary.file_count,
+                "files-skipped": summary.files_skipped,
+                "total-events": summary.total_events,
+                "total-bytes": summary.total_bytes,
+                "elapsed-time": elapsed_time,
+            }
+        )
 
-    elapsed_time = int((datetime.now()-start_time).total_seconds())
-    servicex.put_fileset_complete(
-        {
-            "files": summary.file_count,
-            "files-skipped": summary.files_skipped,
-            "total-events": summary.total_events,
-            "total-bytes": summary.total_bytes,
-            "elapsed-time": elapsed_time,
-        }
-    )
-
-    servicex.post_status_update(f'Completed load of file in {elapsed_time} seconds')
+        servicex.post_status_update(f'Completed load of file in {elapsed_time} seconds')
 
 
 def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body):
@@ -73,6 +73,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         did = did_request['did']
         request_id = did_request['request_id']
         servicex = ServiceXAdapter(did_request['service-endpoint'])
+        servicex.post_status_update("DID Request received")
 
         # Process the request and resolve the DID
         try:
@@ -82,7 +83,8 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
             traceback.print_exc()
             _, exec_value, _ = sys.exc_info()
             servicex.post_status_update(f'DID Request Failed for id {request_id}: '
-                                        f'{str(e)} - {exec_value}')
+                                        f'{str(e)} - {exec_value}',
+                                        severity='fatal')
             raise
 
     except Exception as e:
