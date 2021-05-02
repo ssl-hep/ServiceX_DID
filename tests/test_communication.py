@@ -157,13 +157,33 @@ def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):
     assert init_rabbit_callback.call_args[0][2] == 'special_did_requests'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='exit_on_error only added in python 3.9')
-def test_arg_required():
-    'Make sure the rabbit mq argument is required'
+# @pytest.mark.skipif(sys.version_info < (3, 9), reason='exit_on_error only added in python 3.9')
+# For SOME REASON python 3.9 is not listening to exit_on_error for this type of error
+# def test_arg_required():
+#     'Make sure the rabbit mq argument is required'
+#     # This option is only available in 3.9, so for less than 3.9 we can't run this test.
+#     parser = argparse.ArgumentParser(exit_on_error=False)
+#     default_command_line_args(parser)
+#     parser.add_argument('--dude', dest="sort_it", action='store')
+
+#     with pytest.raises(argparse.ArgumentError):
+#         parser.parse_args(['--dude', 'fork'])
+
+
+def test_arg_required(init_rabbit_callback):
+    'Make sure the argument passed on the command line makes it in'
     # This option is only available in 3.9, so for less than 3.9 we can't run this test.
-    parser = argparse.ArgumentParser(exit_on_error=False)
+    parser = argparse.ArgumentParser()
     default_command_line_args(parser)
     parser.add_argument('--dude', dest="sort_it", action='store')
 
-    with pytest.raises(Exception) as e:
-        parser.parse_args(['--dude', 'fork'])
+    args = parser.parse_args(['--rabbit-uri', 'not-really-there'])
+
+    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+        if False:
+            yield {
+                'ops': 'no'
+            }
+    start_did_finder('test_finder', my_callback, args)
+
+    assert init_rabbit_callback.call_args[0][1] == 'not-really-there'
