@@ -127,9 +127,25 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
                 raise
 
 
-def start_did_finder(did_name: str,
+def default_command_line_args(parser: argparse.ArgumentParser):
+    '''default_command_line_args Add required arguments to a parser
+
+    If you need to parse command line arguments for some special configuration, create your
+    own argument parser, and call this function to make sure the arguments needed
+    for running the back-end communication are filled in properly.
+
+    Then pass the results of the parsing to the `start_did_finder` method.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser. Arguments needed for the
+                                          did finder/servicex communication will be added.
+    '''
+    parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store')
+
+
+def start_did_finder(did_finder_name: str,
                      callback: UserDIDHandler,
-                     parser: Optional[argparse.ArgumentParser] = None):
+                     parsed_args: Optional[argparse.Namespace] = None):
     '''start_did_finder Start the DID finder
 
     Top level method that starts the DID finder, hooking it up to rabbitmq queues, etc.,
@@ -143,22 +159,26 @@ def start_did_finder(did_name: str,
     Args:
         did_name (str): Name of the DID finder (baked into the rabbit mq name)
         callback (UserDIDHandler): Callback to handle the DID rendering requests
-        parser (Optional[argparse.ArgumentParser], optional): If you need to parse your own
+        parser (Optional[argparse.Namespace], optional): If you need to parse your own
                                                               command line arguments, create
-                                                              an arg parser and pass it in.
-                                                              Defaults to None.
+                                                              an arg parser, make sure to call
+                                                              default_command_line_args, run the
+                                                              parser and pass in the resulting
+                                                              parsed arguments.
+                                                              Defaults to None (automatically
+                                                              parses)
     '''
     # Setup command line parsing
-    parser = parser if parser is not None else argparse.ArgumentParser()
-    parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store',
-                        default='host.docker.internal')
+    if parsed_args is None:
+        parser = argparse.ArgumentParser()
+        default_command_line_args(parser)
+        parsed_args = parser.parse_args()
 
     # Parse the arguments, and get the callback going
-    args = parser.parse_args()
 
     # Start up rabbit mq and also callbacks
     init_rabbit_mq(callback,
-                   args.rabbit_uri,
-                   f'{did_name}{QUEUE_NAME_POSTFIX}',
+                   parsed_args.rabbit_uri,
+                   f'{did_finder_name}{QUEUE_NAME_POSTFIX}',
                    retries=12,
                    retry_interval=10)

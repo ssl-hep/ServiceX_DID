@@ -1,9 +1,11 @@
+import argparse
+from re import S
 from typing import Any, AsyncGenerator, Dict
 import pytest
 from unittest.mock import ANY, patch, MagicMock
 import json
 
-from servicex_did.communication import init_rabbit_mq
+from servicex_did.communication import init_rabbit_mq, start_did_finder
 
 
 class RabbitAdaptor:
@@ -114,3 +116,39 @@ def test_no_files_returned(rabbitmq, SXAdaptor):
     SXAdaptor.put_file_add.assert_not_called()
     SXAdaptor.put_fileset_complete.assert_not_called()
     SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')
+
+
+@pytest.fixture()
+def init_rabbit_callback(mocker):
+    with patch('servicex_did.communication.init_rabbit_mq', autospec=True) as call_back:
+        yield call_back
+
+
+@pytest.fixture()
+def simple_argument_parser(mocker):
+    with patch('servicex_did.communication.argparse.ArgumentParser', autospec=True) \
+            as ctor_ArgumentParser:
+        parser = mocker.MagicMock(spec=argparse.ArgumentParser)
+        ctor_ArgumentParser.return_value = parser
+
+        parsed_args = mocker.MagicMock()
+        parsed_args.rabbit_uri = 'test_queue_address'
+
+        parser.parse_args = mocker.MagicMock(return_value=parsed_args)
+
+        yield parser
+
+
+def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):
+    'If there is a missing argument on the command line it should cause a total failure'
+
+    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+        if False:
+            yield {
+                'ops': 'no'
+            }
+
+    start_did_finder("special", my_callback)
+
+    assert init_rabbit_callback.call_args[0][1] == 'test_queue_address'
+    assert init_rabbit_callback.call_args[0][2] == 'special_did_requests'

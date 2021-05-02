@@ -26,10 +26,10 @@ Yield the results as you find them - ServiceX will actually start processing the
 In your main script, start off the DID finder with a call similar to:
 
 ```python
-start_did_finder('myfinder', my_callback)
+start_did_finder('my_finder', my_callback)
 ```
 
-This script should be run in your docker container at start up. Once running, if a user submits a query with the DID name `myfinder://dataset1`, then your callback will be called with `did_name` set to `dataset1`.
+This script should be run in your docker container at start up. Once running, if a user submits a query with the DID name `my_finder://dataset1`, then your callback will be called with `did_name` set to `dataset1`.
 
 ## Left to do
 
