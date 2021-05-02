@@ -2,7 +2,7 @@ import argparse
 from typing import Any, AsyncGenerator, Dict
 import pika
 import pytest
-from unittest.mock import ANY, call, patch, MagicMock
+from unittest.mock import ANY, patch, MagicMock
 import json
 
 from servicex_did.communication import default_command_line_args, init_rabbit_mq, start_did_finder
@@ -57,8 +57,11 @@ def rabbitmq_fail_once(mocker):
             as block_connection_ctor:
 
         block_connection = mocker.MagicMock()
-        block_connection_ctor.side_effect = [pika.exceptions.AMQPConnectionError(),
-                                             block_connection]
+        block_connection_ctor.side_effect = \
+            [
+                pika.exceptions.AMQPConnectionError(),  # type: ignore
+                block_connection
+            ]
 
         channel = mocker.MagicMock()
         block_connection.channel.return_value = channel

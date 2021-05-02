@@ -21,6 +21,9 @@ UserDIDHandler = Callable[[str], AsyncGenerator[Dict[str, Any], None]]
 # is also changed in the ServiceX_App
 QUEUE_NAME_POSTFIX = '_did_requests'
 
+__logging = logging.getLogger(__name__)
+__logging.addHandler(logging.NullHandler())
+
 
 async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, user_callback: UserDIDHandler):
     summary = DIDSummary(did)
@@ -69,7 +72,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
-        logging.info(f'Received DID request {did_request}')
+        __logging.info(f'Received DID request {did_request}')
         did = did_request['did']
         request_id = did_request['request_id']
         servicex = ServiceXAdapter(did_request['service-endpoint'])
@@ -88,7 +91,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
             raise
 
     except Exception as e:
-        logging.error(f'DID request failed {str(e)}')
+        __logging.exception(f'DID request failed {str(e)}')
         traceback.print_exc()
 
     finally:
@@ -106,7 +109,7 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
             _channel = rabbitmq.channel()
             _channel.queue_declare(queue=queue_name)
 
-            logging.info("Connected to RabbitMQ. Ready to start consuming requests")
+            __logging.info("Connected to RabbitMQ. Ready to start consuming requests")
 
             _channel.basic_consume(queue=queue_name,
                                    auto_ack=False,
@@ -114,17 +117,17 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
                                    rabbit_mq_callback(user_callback, c, m, p, b))
             _channel.start_consuming()
 
-        except pika.exceptions.AMQPConnectionError as eek:  # type: ignore
+        except pika.exceptions.AMQPConnectionError:  # type: ignore
             rabbitmq = None
             retry_count += 1
             if retry_count <= retries:
-                logging.error(f'Failed to connect to RabbitMQ at {rabbitmq_url} '
-                              f'(try #{retry_count}). Waiting {retry_interval} seconds '
-                              f'before trying again {str(eek)}')
+                __logging.exception(f'Failed to connect to RabbitMQ at {rabbitmq_url} '
+                                    f'(try #{retry_count}). Waiting {retry_interval} seconds '
+                                    'before trying again')
                 time.sleep(retry_interval)
             else:
-                print(f'Failed to connect to RabbitMQ. Giving Up after {retry_count} '
-                      f'tries: {str(eek)}')
+                __logging.exception(f'Failed to connect to RabbitMQ. Giving Up after {retry_count}'
+                                    ' tries')
                 raise
 
 
