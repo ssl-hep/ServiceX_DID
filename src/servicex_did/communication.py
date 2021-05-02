@@ -140,7 +140,7 @@ def default_command_line_args(parser: argparse.ArgumentParser):
         parser (argparse.ArgumentParser): The argument parser. Arguments needed for the
                                           did finder/servicex communication will be added.
     '''
-    parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store')
+    parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store', required=True)
 
 
 def start_did_finder(did_finder_name: str,

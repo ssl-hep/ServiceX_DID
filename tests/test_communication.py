@@ -1,11 +1,12 @@
 import argparse
 from re import S
+import sys
 from typing import Any, AsyncGenerator, Dict
 import pytest
 from unittest.mock import ANY, patch, MagicMock
 import json
 
-from servicex_did.communication import init_rabbit_mq, start_did_finder
+from servicex_did.communication import default_command_line_args, init_rabbit_mq, start_did_finder
 
 
 class RabbitAdaptor:
@@ -49,6 +50,29 @@ def rabbitmq(mocker):
 
         control = RabbitAdaptor(channel)
         yield control
+
+
+@pytest.fixture()
+def init_rabbit_callback(mocker):
+    with patch('servicex_did.communication.init_rabbit_mq', autospec=True) as call_back:
+        yield call_back
+
+
+@pytest.fixture()
+def simple_argument_parser(mocker):
+    with patch('servicex_did.communication.argparse.ArgumentParser', autospec=True) \
+            as ctor_ArgumentParser:
+        parser = mocker.MagicMock(spec=argparse.ArgumentParser)
+        ctor_ArgumentParser.return_value = parser
+
+        parsed_args = mocker.MagicMock()
+        parsed_args.rabbit_uri = 'test_queue_address'
+
+        parser.parse_args = mocker.MagicMock(return_value=parsed_args)
+
+        yield parser
+
+
 
 
 def test_one_file_call(rabbitmq, SXAdaptor):
@@ -118,27 +142,6 @@ def test_no_files_returned(rabbitmq, SXAdaptor):
     SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')
 
 
-@pytest.fixture()
-def init_rabbit_callback(mocker):
-    with patch('servicex_did.communication.init_rabbit_mq', autospec=True) as call_back:
-        yield call_back
-
-
-@pytest.fixture()
-def simple_argument_parser(mocker):
-    with patch('servicex_did.communication.argparse.ArgumentParser', autospec=True) \
-            as ctor_ArgumentParser:
-        parser = mocker.MagicMock(spec=argparse.ArgumentParser)
-        ctor_ArgumentParser.return_value = parser
-
-        parsed_args = mocker.MagicMock()
-        parsed_args.rabbit_uri = 'test_queue_address'
-
-        parser.parse_args = mocker.MagicMock(return_value=parsed_args)
-
-        yield parser
-
-
 def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):
     'If there is a missing argument on the command line it should cause a total failure'
 
@@ -152,3 +155,15 @@ def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):
 
     assert init_rabbit_callback.call_args[0][1] == 'test_queue_address'
     assert init_rabbit_callback.call_args[0][2] == 'special_did_requests'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='exit_on_error only added in python 3.9')
+def test_arg_required():
+    'Make sure the rabbit mq argument is required'
+    # This option is only available in 3.9, so for less than 3.9 we can't run this test.
+    parser = argparse.ArgumentParser(exit_on_error=False)
+    default_command_line_args(parser)
+    parser.add_argument('--dude', dest="sort_it", action='store')
+
+    with pytest.raises(Exception) as e:
+        parser.parse_args(['--dude', 'fork'])
