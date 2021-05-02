@@ -1,9 +1,8 @@
 import argparse
-from re import S
-import sys
 from typing import Any, AsyncGenerator, Dict
+import pika
 import pytest
-from unittest.mock import ANY, patch, MagicMock
+from unittest.mock import ANY, call, patch, MagicMock
 import json
 
 from servicex_did.communication import default_command_line_args, init_rabbit_mq, start_did_finder
@@ -53,6 +52,22 @@ def rabbitmq(mocker):
 
 
 @pytest.fixture()
+def rabbitmq_fail_once(mocker):
+    with patch('servicex_did.communication.pika.BlockingConnection', autospec=True) \
+            as block_connection_ctor:
+
+        block_connection = mocker.MagicMock()
+        block_connection_ctor.side_effect = [pika.exceptions.AMQPConnectionError(),
+                                             block_connection]
+
+        channel = mocker.MagicMock()
+        block_connection.channel.return_value = channel
+
+        control = RabbitAdaptor(channel)
+        yield control
+
+
+@pytest.fixture()
 def init_rabbit_callback(mocker):
     with patch('servicex_did.communication.init_rabbit_mq', autospec=True) as call_back:
         yield call_back
@@ -71,8 +86,6 @@ def simple_argument_parser(mocker):
         parser.parse_args = mocker.MagicMock(return_value=parsed_args)
 
         yield parser
-
-
 
 
 def test_one_file_call(rabbitmq, SXAdaptor):
@@ -140,6 +153,28 @@ def test_no_files_returned(rabbitmq, SXAdaptor):
     SXAdaptor.put_file_add.assert_not_called()
     SXAdaptor.put_fileset_complete.assert_not_called()
     SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')
+
+
+def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
+    'Make sure that when we have a connection failure we try again'
+
+    called = False
+
+    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+        nonlocal called
+        called = True
+        yield {
+            'file_path': "fork/it/over",
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=1,
+                   retry_interval=0.1)
+    rabbitmq_fail_once.send_did_request('hi-there')
+
+    assert called
 
 
 def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):

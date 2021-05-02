@@ -2,7 +2,7 @@ import argparse
 from datetime import datetime
 import json
 import logging
-from time import time
+import time
 from typing import Any, AsyncGenerator, Callable, Dict, Optional
 import sys
 import traceback
@@ -96,7 +96,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 
 
 def init_rabbit_mq(user_callback: UserDIDHandler,
-                   rabbitmq_url: str, queue_name: str, retries: int, retry_interval: int):
+                   rabbitmq_url: str, queue_name: str, retries: int, retry_interval: float):
     rabbitmq = None
     retry_count = 0
 
@@ -117,9 +117,10 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
         except pika.exceptions.AMQPConnectionError as eek:  # type: ignore
             rabbitmq = None
             retry_count += 1
-            if retry_count < retries:
-                logging.error(f'Failed to connect to RabbitMQ (try #{retry_count}). '
-                              f'Waiting {retry_interval} seconds before trying again {str(eek)}')
+            if retry_count <= retries:
+                logging.error(f'Failed to connect to RabbitMQ at {rabbitmq_url} '
+                              f'(try #{retry_count}). Waiting {retry_interval} seconds '
+                              f'before trying again {str(eek)}')
                 time.sleep(retry_interval)
             else:
                 print(f'Failed to connect to RabbitMQ. Giving Up after {retry_count} '
