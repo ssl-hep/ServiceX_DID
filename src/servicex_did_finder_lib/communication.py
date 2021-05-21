@@ -10,7 +10,7 @@ import traceback
 import pika
 from make_it_sync import make_sync
 
-from servicex_did.did_summary import DIDSummary
+from servicex_did_finder_lib.did_summary import DIDSummary
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.

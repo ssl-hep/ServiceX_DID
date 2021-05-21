@@ -1,4 +1,4 @@
-from servicex_did import __version__
+from servicex_did_finder_lib import __version__
 
 
 def test_version():

@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import ANY, patch, MagicMock
 import json
 
-from servicex_did.communication import default_command_line_args, init_rabbit_mq, start_did_finder
+from servicex_did_finder_lib.communication import default_command_line_args, init_rabbit_mq, start_did_finder
 
 
 class RabbitAdaptor:
@@ -29,7 +29,7 @@ class RabbitAdaptor:
 @pytest.fixture()
 def SXAdaptor(mocker):
     'Return a ServiceXAdaptor for testing'
-    with patch('servicex_did.communication.ServiceXAdapter', autospec=True) as sx_ctor:
+    with patch('servicex_did_finder_lib.communication.ServiceXAdapter', autospec=True) as sx_ctor:
         sx_adaptor = mocker.MagicMock()
         sx_ctor.return_value = sx_adaptor
 
@@ -38,7 +38,7 @@ def SXAdaptor(mocker):
 
 @pytest.fixture()
 def rabbitmq(mocker):
-    with patch('servicex_did.communication.pika.BlockingConnection', autospec=True) \
+    with patch('servicex_did_finder_lib.communication.pika.BlockingConnection', autospec=True) \
             as block_connection_ctor:
 
         block_connection = mocker.MagicMock()
@@ -53,7 +53,7 @@ def rabbitmq(mocker):
 
 @pytest.fixture()
 def rabbitmq_fail_once(mocker):
-    with patch('servicex_did.communication.pika.BlockingConnection', autospec=True) \
+    with patch('servicex_did_finder_lib.communication.pika.BlockingConnection', autospec=True) \
             as block_connection_ctor:
 
         block_connection = mocker.MagicMock()
@@ -72,13 +72,13 @@ def rabbitmq_fail_once(mocker):
 
 @pytest.fixture()
 def init_rabbit_callback(mocker):
-    with patch('servicex_did.communication.init_rabbit_mq', autospec=True) as call_back:
+    with patch('servicex_did_finder_lib.communication.init_rabbit_mq', autospec=True) as call_back:
         yield call_back
 
 
 @pytest.fixture()
 def simple_argument_parser(mocker):
-    with patch('servicex_did.communication.argparse.ArgumentParser', autospec=True) \
+    with patch('servicex_did_finder_lib.communication.argparse.ArgumentParser', autospec=True) \
             as ctor_ArgumentParser:
         parser = mocker.MagicMock(spec=argparse.ArgumentParser)
         ctor_ArgumentParser.return_value = parser
