@@ -19,9 +19,7 @@ jobs:
     - name: Build
       run: |
         poetry version ${{ github.ref }}
-        poetry build
-    - name: Publish a func_adl to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.3.1
+    - name: Build and publish to pypi
+      uses: JRubics/poetry-publish@v1.6
       with:
-        user: __token__
-        password: ${{ secrets.pypi_password_func_adl }}
+        pypi_token: ${{ secrets.pypi_password_sx_did_lib }}
