@@ -8,7 +8,7 @@ authors = ["Gordon Watts <gwatts@uw.edu>"]
 python = "^3.6"
 pika = "1.1.0"
 make-it-sync = "^1.0.0"
-requests = "^2.25.1"
+requests = "^2.25.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
