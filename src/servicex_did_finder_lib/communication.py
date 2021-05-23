@@ -14,7 +14,7 @@ from servicex_did_finder_lib.did_summary import DIDSummary
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
-UserDIDHandler = Callable[[str], AsyncGenerator[Dict[str, Any], None]]
+UserDIDHandler = Callable[[str, Dict[str, Any]], AsyncGenerator[Dict[str, Any], None]]
 
 # Given name, build the RabbitMQ queue name by appending this.
 # This is backed into how ServiceX works - do not change unless it
@@ -25,10 +25,11 @@ __logging = logging.getLogger(__name__)
 __logging.addHandler(logging.NullHandler())
 
 
-async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, user_callback: UserDIDHandler):
+async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[str, Any],
+                              user_callback: UserDIDHandler):
     summary = DIDSummary(did)
     start_time = datetime.now()
-    async for file_info in user_callback(did):
+    async for file_info in user_callback(did, info):
 
         # Track the file, inject back into the system
         summary.add_file(file_info)
@@ -78,9 +79,13 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         servicex = ServiceXAdapter(did_request['service-endpoint'])
         servicex.post_status_update("DID Request received")
 
+        info = {
+            'request-id': request_id,
+        }
+
         # Process the request and resolve the DID
         try:
-            make_sync(run_file_fetch_loop)(did, servicex, user_callback)
+            make_sync(run_file_fetch_loop)(did, servicex, info, user_callback)
 
         except Exception as e:
             traceback.print_exc()

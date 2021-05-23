@@ -1,11 +1,13 @@
 import argparse
+import json
 from typing import Any, AsyncGenerator, Dict
+from unittest.mock import ANY, MagicMock, patch
+
 import pika
 import pytest
-from unittest.mock import ANY, patch, MagicMock
-import json
-
-from servicex_did_finder_lib.communication import default_command_line_args, init_rabbit_mq, start_did_finder
+from servicex_did_finder_lib.communication import (default_command_line_args,
+                                                   init_rabbit_mq,
+                                                   start_did_finder)
 
 
 class RabbitAdaptor:
@@ -96,7 +98,7 @@ def test_one_file_call(rabbitmq, SXAdaptor):
 
     seen_name = None
 
-    async def my_callback(did_name: str):
+    async def my_callback(did_name: str, info: Dict[str, Any]):
         nonlocal seen_name
         seen_name = did_name
         yield {
@@ -122,7 +124,8 @@ def test_one_file_call(rabbitmq, SXAdaptor):
 def test_failed_file(rabbitmq, SXAdaptor):
     'Test a callback that fails before any files are sent'
 
-    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
         if False:
             yield {
                 'ops': 'no'
@@ -142,7 +145,8 @@ def test_failed_file(rabbitmq, SXAdaptor):
 def test_no_files_returned(rabbitmq, SXAdaptor):
     'Test a callback that fails before any files are sent'
 
-    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
         if False:
             yield {
                 'ops': 'no'
@@ -163,7 +167,8 @@ def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
 
     called = False
 
-    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
         nonlocal called
         called = True
         yield {
@@ -183,7 +188,8 @@ def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
 def test_auto_args_callback(init_rabbit_callback, simple_argument_parser):
     'If there is a missing argument on the command line it should cause a total failure'
 
-    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
         if False:
             yield {
                 'ops': 'no'
@@ -217,7 +223,8 @@ def test_arg_required(init_rabbit_callback):
 
     args = parser.parse_args(['--rabbit-uri', 'not-really-there'])
 
-    async def my_callback(did_name: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
         if False:
             yield {
                 'ops': 'no'

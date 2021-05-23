@@ -11,7 +11,7 @@ ServiceX DID finders take a dataset name and turn them into files to be transfor
 Create an async callback method that `yield`s file info dictionaries. For example:
 
 ```python
-    async def my_callback(did_name: str):
+    async def my_callback(did_name: str, info: Dict[str, Any]):
         for i in range(0, 10):
             yield {
                 'file_path': f"root://atlas-experiment.cern.ch/dataset1/file{i}.root",
@@ -23,6 +23,9 @@ Create an async callback method that `yield`s file info dictionaries. For exampl
 
 Yield the results as you find them - ServiceX will actually start processing the files before your DID lookup is finished using this scheme. Fill in `file_size` in bytes and number of events in `file_events` if you know them.
 
+`info` contains a dict of various info about the request that asked for this DID:
+* `request-id` The request id that has this DID asscoiated. For logging.
+
 In your main script, start off the DID finder with a call similar to:
 
 ```python
@@ -30,6 +33,10 @@ start_did_finder('my_finder', my_callback)
 ```
 
 This script should be run in your docker container at start up. Once running, if a user submits a query with the DID name `my_finder://dataset1`, then your callback will be called with `did_name` set to `dataset1`.
+
+### Proper Logging
+
+You might not think logging is important, but... k8... blah blah
 
 ## Left to do
 
