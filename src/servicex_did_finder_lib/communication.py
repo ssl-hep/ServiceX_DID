@@ -11,6 +11,7 @@ import pika
 from make_it_sync import make_sync
 
 from servicex_did_finder_lib.did_summary import DIDSummary
+from servicex_did_finder_lib.logging import initialize_logging
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
@@ -81,6 +82,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 
         info = {
             'request-id': request_id,
+            'log': initialize_logging()
         }
 
         # Process the request and resolve the DID
