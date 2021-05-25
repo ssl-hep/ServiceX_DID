@@ -10,6 +10,8 @@ The DID Finder author need write only a line of initialization code and then a s
 
 ## Usage
 
+A very simple [demo](https://github.com/ssl-hep/ServiceX_DID_Finder_Demo) has been created to show how to make a basic DID finder for ServiceX. You can use that as a starting point if authoring one.
+
 Create an async callback method that `yield`s file info dictionaries. For example:
 
 ```python
