@@ -110,7 +110,7 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
 ```python
     async def my_callback(did_name: str, info: Dict[str, Any]):
         info['log'].info(f'Looking up dataset {did_name}.',
-                         extras={'RequestId': info['request-id']})
+                         extras={'requestId': info['request-id']})
         for i in range(0, 10):
             yield {
                 'file_path': f"root://atlas-experiment.cern.ch/dataset1/file{i}.root",
@@ -119,3 +119,5 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
                 'file_events': 0,
             }
 ```
+
+Note the parameter `request-id`: this marks the log messages with the request id that triggered this DID request. This will enable the system to track all log messages across all containers connected with this particular request id - making debugging a lot easier.
