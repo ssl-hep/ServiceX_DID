@@ -110,9 +110,12 @@ Another pattern in the above code that one might find useful - a thread-safe way
 In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX comes with a built in logging mechanism. If anything is to be logged it should use the log system using the python standard `logging` module, with some extra information. For example, here is how to log a message from your callback function:
 
 ```python
+    import logger
+    __log = logger.getLogger(__name__)
     async def my_callback(did_name: str, info: Dict[str, Any]):
-        info['log'].info(f'Looking up dataset {did_name}.',
-                         extras={'requestId': info['request-id']})
+        __log.info(f'Looking up dataset {did_name}.',
+                     extra={'requestId': info['request-id']})
+
         for i in range(0, 10):
             yield {
                 'file_path': f"root://atlas-experiment.cern.ch/dataset1/file{i}.root",
@@ -123,3 +126,7 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
 ```
 
 Note the parameter `request-id`: this marks the log messages with the request id that triggered this DID request. This will enable the system to track all log messages across all containers connected with this particular request id - making debugging a lot easier.
+
+The `start_did_finder` will configure the python root logger properly to dump messages with a request ID in them.
+
+*NOTE*: Once `start_did_finder` is called, whenever you log a message you _must_ pass the extra argument. If not, a formatting exception will occur during logging and the message will be swallowed.

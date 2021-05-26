@@ -25,7 +25,7 @@ class DIDFormatter(logging.Formatter):
             return super().format(record)
 
 
-def initialize_logging():
+def initialize_root_logger(did_scheme: str):
     """
     Get a logger and initialize it so that it outputs the correct format
     :param request: Request id to insert into log messages
@@ -35,7 +35,7 @@ def initialize_logging():
     log = logging.getLogger()
     instance = os.environ.get('INSTANCE_NAME', 'Unknown')
     formatter = DIDFormatter('%(levelname)s ' +
-                             f"{instance} rucio_did_finder " +
+                             f"{instance} {did_scheme}_did_finder " +
                              '%(requestId)s %(message)s')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

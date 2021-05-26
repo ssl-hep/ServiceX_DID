@@ -11,7 +11,7 @@ import pika
 from make_it_sync import make_sync
 
 from servicex_did_finder_lib.did_summary import DIDSummary
-from servicex_did_finder_lib.logging import initialize_logging
+from servicex_did_finder_lib.logging import initialize_root_logger
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
@@ -22,6 +22,7 @@ UserDIDHandler = Callable[[str, Dict[str, Any]], AsyncGenerator[Dict[str, Any], 
 # is also changed in the ServiceX_App
 QUEUE_NAME_POSTFIX = '_did_requests'
 
+# Easy to use local logger
 __logging = logging.getLogger(__name__)
 __logging.addHandler(logging.NullHandler())
 
@@ -82,7 +83,6 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 
         info = {
             'request-id': request_id,
-            'log': initialize_logging()
         }
 
         # Process the request and resolve the DID
@@ -185,7 +185,8 @@ def start_did_finder(did_finder_name: str,
         default_command_line_args(parser)
         parsed_args = parser.parse_args()
 
-    # Parse the arguments, and get the callback going
+    # Initialize the root logger
+    initialize_root_logger(did_finder_name)
 
     # Start up rabbit mq and also callbacks
     init_rabbit_mq(callback,
