@@ -28,7 +28,7 @@ class DIDFormatter(logging.Formatter):
 def initialize_root_logger(did_scheme: str):
     """
     Get a logger and initialize it so that it outputs the correct format
-    :param request: Request id to insert into log messages
+    :param did_scheme: The scheme name to identify his did finder in log messages.
     :return: logger with correct formatting that outputs to console
     """
 

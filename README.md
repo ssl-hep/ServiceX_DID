@@ -128,5 +128,3 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
 Note the parameter `request-id`: this marks the log messages with the request id that triggered this DID request. This will enable the system to track all log messages across all containers connected with this particular request id - making debugging a lot easier.
 
 The `start_did_finder` will configure the python root logger properly to dump messages with a request ID in them.
-
-*NOTE*: Once `start_did_finder` is called, whenever you log a message you _must_ pass the extra argument. If not, a formatting exception will occur during logging and the message will be swallowed.
