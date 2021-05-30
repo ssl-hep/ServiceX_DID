@@ -27,9 +27,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from datetime import datetime
 import requests
+import logging
 
 
 MAX_RETRIES = 3
+
+__logging = logging.getLogger(__name__)
 
 
 class ServiceXAdapter:
@@ -49,11 +52,12 @@ class ServiceXAdapter:
                 })
                 success = True
             except requests.exceptions.ConnectionError:
-                print("Connection err. Retry")
+                __logging.exception(f'Connection error to ServiceX App. Will retry (try {attempts}'
+                                    f' out of {MAX_RETRIES}')
                 attempts += 1
         if not success:
-            print("******** Failed to write status message")
-            print("******** Continuing")
+            __logging.error(f'After {attempts} tries, failed to send ServiceX App a status '
+                            f'message: {str(status_msg)} - Ignoring error.')
 
     def put_file_add(self, file_info):
         success = False
@@ -69,11 +73,12 @@ class ServiceXAdapter:
                 })
                 success = True
             except requests.exceptions.ConnectionError:
-                print("Connection err. Retry")
+                __logging.exception(f'Connection error to ServiceX App. Will retry (try {attempts}'
+                                    f' out of {MAX_RETRIES}')
                 attempts += 1
         if not success:
-            print("******** Failed to add new file")
-            print("******** Continuing")
+            __logging.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
+                            f'message: {str(file_info)} - Ignoring error.')
 
     def post_preflight_check(self, file_entry):
         success = False
@@ -85,11 +90,12 @@ class ServiceXAdapter:
                 })
                 success = True
             except requests.exceptions.ConnectionError:
-                print("Connection err. Retry")
+                __logging.exception(f'Connection error to ServiceX App. Will retry (try {attempts}'
+                                    f' out of {MAX_RETRIES}')
                 attempts += 1
         if not success:
-            print("******** Failed to write preflight check")
-            print("******** Continuing")
+            __logging.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
+                            f'message: {str(file_entry)} - Ignoring error.')
 
     def put_fileset_complete(self, summary):
         success = False
@@ -99,8 +105,9 @@ class ServiceXAdapter:
                 requests.put(self.endpoint + "/complete", json=summary)
                 success = True
             except requests.exceptions.ConnectionError:
-                print("Connection err. Retry")
+                __logging.exception(f'Connection error to ServiceX App. Will retry (try {attempts}'
+                                    f' out of {MAX_RETRIES}')
                 attempts += 1
         if not success:
-            print("******** Failed to write fileset complete")
-            print("******** Continuing")
+            __logging.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
+                            f'message: {str(summary)} - Ignoring error.')
