@@ -5,13 +5,12 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Callable, Dict, Optional
 import sys
-import traceback
 
 import pika
 from make_it_sync import make_sync
 
 from servicex_did_finder_lib.did_summary import DIDSummary
-from servicex_did_finder_lib.logging import initialize_root_logger
+from servicex_did_finder_lib.did_logging import initialize_root_logger
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
@@ -74,10 +73,11 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
     '''
     try:
         # Unpack the message. Really bad if we fail up here!
+        request_id = None  # set this in case we get an exception while loading request
         did_request = json.loads(body)
-        __logging.info(f'Received DID request {did_request}')
         did = did_request['did']
         request_id = did_request['request_id']
+        __logging.info(f'Received DID request {did_request}', extra={'requestId': request_id})
         servicex = ServiceXAdapter(did_request['service-endpoint'])
         servicex.post_status_update("DID Request received")
 
@@ -90,16 +90,15 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
             make_sync(run_file_fetch_loop)(did, servicex, info, user_callback)
 
         except Exception as e:
-            traceback.print_exc()
             _, exec_value, _ = sys.exc_info()
+            __logging.exception('DID Request Failed', extra={'requestId': request_id})
             servicex.post_status_update(f'DID Request Failed for id {request_id}: '
                                         f'{str(e)} - {exec_value}',
                                         severity='fatal')
             raise
 
     except Exception as e:
-        __logging.exception(f'DID request failed {str(e)}')
-        traceback.print_exc()
+        __logging.exception(f'DID request failed {str(e)}', extra={'requestId': request_id})
 
     finally:
         channel.basic_ack(delivery_tag=method.delivery_tag)
