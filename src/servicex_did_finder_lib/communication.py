@@ -34,9 +34,9 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
 
         # Track the file, inject back into the system
         summary.add_file(file_info)
-        servicex.put_file_add(file_info)
         if summary.file_count == 1:
             servicex.post_preflight_check(file_info)
+        servicex.put_file_add(file_info)
 
     # Simple error checking and reporting
     if summary.file_count == 0:
