@@ -5,7 +5,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pika
 import pytest
-from servicex_did_finder_lib.communication import (default_command_line_args,
+from servicex_did_finder_lib.communication import (add_did_finder_cnd_arguments,
                                                    init_rabbit_mq,
                                                    start_did_finder)
 
@@ -205,7 +205,7 @@ def test_arg_required(init_rabbit_callback):
     'Make sure the argument passed on the command line makes it in'
     # This option is only available in 3.9, so for less than 3.9 we can't run this test.
     parser = argparse.ArgumentParser()
-    default_command_line_args(parser)
+    add_did_finder_cnd_arguments(parser)
     parser.add_argument('--dude', dest="sort_it", action='store')
 
     args = parser.parse_args(['--rabbit-uri', 'not-really-there'])
