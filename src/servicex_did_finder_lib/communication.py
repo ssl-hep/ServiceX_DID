@@ -71,9 +71,9 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         properties ([type]): Properties of the message
         body ([type]): The body (json for us) of the message
     '''
+    request_id = None  # set this in case we get an exception while loading request
     try:
         # Unpack the message. Really bad if we fail up here!
-        request_id = None  # set this in case we get an exception while loading request
         did_request = json.loads(body)
         did = did_request['did']
         request_id = did_request['request_id']
@@ -137,8 +137,8 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
                 raise
 
 
-def default_command_line_args(parser: argparse.ArgumentParser):
-    '''default_command_line_args Add required arguments to a parser
+def add_did_finder_cnd_arguments(parser: argparse.ArgumentParser):
+    '''add_did_finder_cnd_arguments Add required arguments to a parser
 
     If you need to parse command line arguments for some special configuration, create your
     own argument parser, and call this function to make sure the arguments needed
@@ -170,18 +170,18 @@ def start_did_finder(did_finder_name: str,
         did_name (str): Name of the DID finder (baked into the rabbit mq name)
         callback (UserDIDHandler): Callback to handle the DID rendering requests
         parser (Optional[argparse.Namespace], optional): If you need to parse your own
-                                                              command line arguments, create
-                                                              an arg parser, make sure to call
-                                                              default_command_line_args, run the
-                                                              parser and pass in the resulting
-                                                              parsed arguments.
-                                                              Defaults to None (automatically
-                                                              parses)
+                                                         an arg parser, make sure to call
+                                                         add_did_finder_cnd_arguments, run the
+                                                         parser and pass in the resulting
+                                                         parsed arguments.
+                                                         Defaults to None (automatically
+                                                         parses)
+                                                         command line arguments, create
     '''
     # Setup command line parsing
     if parsed_args is None:
         parser = argparse.ArgumentParser()
-        default_command_line_args(parser)
+        add_did_finder_cnd_arguments(parser)
         parsed_args = parser.parse_args()
 
     # Initialize the root logger

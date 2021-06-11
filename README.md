@@ -65,7 +65,7 @@ If you do need to configure your DID finder from command line arguments, then us
                         help='Prefix to add to Xrootd URLs')
     parser.add_argument('--threads', dest='threads', action='store',
                         default=10, type=int, help="Number of threads to spawn")
-    default_command_line_args(parser)
+    add_did_finder_cnd_arguments(parser)
 
     args = parser.parse_args()
 
@@ -99,7 +99,7 @@ If you do need to configure your DID finder from command line arguments, then us
 
 In particular note:
 
-1. The call to `default_command_line_args` to setup the arguments required by the finder library.
+1. The call to `add_did_finder_cnd_arguments` to setup the arguments required by the finder library.
 2. Parsing of the arguments using the usual `parse_args` method
 3. Passing the parsed arguments to `start_did_finder`.
 
