@@ -151,6 +151,9 @@ def add_did_finder_cnd_arguments(parser: argparse.ArgumentParser):
                                           did finder/servicex communication will be added.
     '''
     parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store', required=True)
+    parser.add_argument('--prefix', dest="prefix", action='store', required=False,
+                        default="",
+                        help='Prefix add to use a caching proxy for URIs')
 
 
 def start_did_finder(did_finder_name: str,
