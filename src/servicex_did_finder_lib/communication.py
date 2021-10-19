@@ -57,7 +57,8 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
         servicex.post_status_update(f'Completed load of file in {elapsed_time} seconds')
 
 
-def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body):
+def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body,
+                       file_prefix=None):
     '''rabbit_mq_callback Respond to RabbitMQ Message
 
     When a request to resolve a DID comes into the DID finder, we
@@ -70,6 +71,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         method ([type]): Delivery method
         properties ([type]): Properties of the message
         body ([type]): The body (json for us) of the message
+        file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
     '''
     request_id = None  # set this in case we get an exception while loading request
     try:
@@ -78,7 +80,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         did = did_request['did']
         request_id = did_request['request_id']
         __logging.info(f'Received DID request {did_request}', extra={'requestId': request_id})
-        servicex = ServiceXAdapter(did_request['service-endpoint'])
+        servicex = ServiceXAdapter(did_request['service-endpoint'], file_prefix)
         servicex.post_status_update("DID Request received")
 
         info = {
@@ -105,7 +107,9 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 
 
 def init_rabbit_mq(user_callback: UserDIDHandler,
-                   rabbitmq_url: str, queue_name: str, retries: int, retry_interval: float):
+                   rabbitmq_url: str, queue_name: str, retries: int,
+                   retry_interval: float,
+                   file_prefix: str = None):
     rabbitmq = None
     retry_count = 0
 
@@ -120,7 +124,7 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
             _channel.basic_consume(queue=queue_name,
                                    auto_ack=False,
                                    on_message_callback=lambda c, m, p, b:
-                                   rabbit_mq_callback(user_callback, c, m, p, b))
+                                   rabbit_mq_callback(user_callback, c, m, p, b, file_prefix))
             _channel.start_consuming()
 
         except pika.exceptions.AMQPConnectionError:  # type: ignore
