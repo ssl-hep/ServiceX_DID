@@ -35,8 +35,9 @@ MAX_RETRIES = 3
 
 
 class ServiceXAdapter:
-    def __init__(self, endpoint):
+    def __init__(self, endpoint, file_prefix=None):
         self.endpoint = endpoint
+        self.file_prefix = file_prefix
 
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
@@ -61,6 +62,9 @@ class ServiceXAdapter:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a status '
                               f'message: {str(status_msg)} - Ignoring error.')
 
+    def _prefix_file(self, file_path):
+        return file_path if not self.file_prefix else self.file_prefix+file_path
+
     def put_file_add(self, file_info):
         success = False
         attempts = 0
@@ -68,7 +72,7 @@ class ServiceXAdapter:
             try:
                 mesg = {
                     "timestamp": datetime.now().isoformat(),
-                    "file_path": file_info['file_path'],
+                    "file_path": self._prefix_file(file_info['file_path']),
                     'adler32': file_info['adler32'],
                     'file_size': file_info['file_size'],
                     'file_events': file_info['file_events']
