@@ -88,22 +88,20 @@ class ServiceXAdapter:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
                               f'message: {str(file_info)} - Ignoring error.')
 
-    def post_preflight_check(self, file_entry):
+    def post_transform_start(self):
         success = False
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                requests.post(self.endpoint + "/preflight", json={
-                    'file_path': file_entry['file_path']
-                })
+                requests.post(self.endpoint + "/start")
                 success = True
             except requests.exceptions.ConnectionError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '
                                       f'(try {attempts} out of {MAX_RETRIES}')
                 attempts += 1
         if not success:
-            self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
-                              f'message: {str(file_entry)} - Ignoring error.')
+            self.logger.error(f'After {attempts} tries, failed to send ServiceX App a  '
+                              f'transform start message - Ignoring error.')
 
     def put_fileset_complete(self, summary):
         success = False
