@@ -7,7 +7,7 @@ import pika
 import pytest
 from servicex_did_finder_lib.communication import (add_did_finder_cnd_arguments,
                                                    init_rabbit_mq,
-                                                   start_did_finder)
+                                                   start_did_finder, run_file_fetch_loop)
 
 
 class RabbitAdaptor:
@@ -219,3 +219,59 @@ def test_arg_required(init_rabbit_callback):
     start_did_finder('test_finder', my_callback, args)
 
     assert init_rabbit_callback.call_args[0][1] == 'not-really-there'
+
+
+@pytest.mark.asyncio
+async def test_run_file_fetch_loop(SXAdaptor, mocker):
+    async def my_user_callback(did, info):
+        return_values = [
+            {
+                'file_path': '/tmp/foo',
+                'adler32': '13e4f',
+                'file_size': 1024,
+                'file_events': 128
+            },
+            {
+                'file_path': '/tmp/bar',
+                'adler32': 'f33d',
+                'file_size': 2046,
+                'file_events': 64
+            }
+        ]
+        for v in return_values:
+            yield v
+
+    await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
+    SXAdaptor.post_preflight_check.assert_called_once
+    assert SXAdaptor.post_preflight_check.call_args[0][0]['file_path'] == '/tmp/foo'
+
+    assert SXAdaptor.put_file_add.call_count == 2
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['file_path'] == '/tmp/foo'
+    assert SXAdaptor.put_file_add.call_args_list[1][0][0]['file_path'] == '/tmp/bar'
+
+    SXAdaptor.put_fileset_complete.assert_called_once
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 2
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files-skipped'] == 0
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['total-events'] == 192
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['total-bytes'] == 3070
+
+    assert SXAdaptor.post_status_update.called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
+    async def my_user_callback(did, info):
+        return_values = []
+        for v in return_values:
+            yield v
+
+    await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
+    SXAdaptor.post_preflight_check.assert_not_called
+
+    assert SXAdaptor.put_file_add.assert_not_called
+    SXAdaptor.put_fileset_complete.assert_not_called
+
+    assert SXAdaptor.post_status_update.call_args[0][0] == \
+           'DID Finder found zero files for dataset 123-456'
+
+    assert SXAdaptor.post_status_update.call_args[1]['severity'] == 'fatal'
