@@ -22,7 +22,7 @@ def test_put_file_add():
 
     assert len(responses.calls) == 1
     submitted = json.loads(responses.calls[0].request.body)
-    assert submitted['file_path'][0] == 'root://foo.bar.ROOT'
+    assert submitted['paths'][0] == 'root://foo.bar.ROOT'
     assert submitted['adler32'] == '32'
     assert submitted['file_events'] == 3141
     assert submitted['file_size'] == 1024
@@ -41,7 +41,7 @@ def test_put_file_add_with_prefix():
 
     assert len(responses.calls) == 1
     submitted = json.loads(responses.calls[0].request.body)
-    assert submitted['file_path'][0] == 'xcache123:root://foo.bar.ROOT'
+    assert submitted['paths'][0] == 'xcache123:root://foo.bar.ROOT'
     assert submitted['adler32'] == '32'
     assert submitted['file_events'] == 3141
     assert submitted['file_size'] == 1024
