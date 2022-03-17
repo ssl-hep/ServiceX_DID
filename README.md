@@ -18,7 +18,7 @@ Create an async callback method that `yield`s file info dictionaries. For exampl
     async def my_callback(did_name: str, info: Dict[str, Any]):
         for i in range(0, 10):
             yield {
-                'file_path': f"root://atlas-experiment.cern.ch/dataset1/file{i}.root",
+                'file_path': [f"root://atlas-experiment.cern.ch/dataset1/file{i}.root"],
                 'adler32': b183712731,
                 'file_size': 0,
                 'file_events': 0,
@@ -33,7 +33,7 @@ The arguments to the method are straight forward:
 
 Yield the results as you find them - ServiceX will actually start processing the files before your DID lookup is finished if you do this. The fields you need to pass back to the library are as follows:
 
-* `file_path`: A URI that a transformer in ServiceX can access to get at the file. Often these are either `root://` or `http://` schema URI's.
+* `file_path`: An ordered list of URIs that a transformer in ServiceX can access to get at the file. Often these are either `root://` or `http://` schema URI's. When accessing the file, URIs will be tried in ordered listed.
 * `adler32`: A CRC number for the file. This CRC is calculated in a special way by rucio and is not used. Leave as 0 if you do not know it.
 * `file_size`: Number of bytes of the file. Used to calculate statistics. Leave as zero if you do not know it (or it is expensive to look up).
 * `file_events`: Number of events in the file. Used to calculate statistics. Leave as zero if you do not know it (or it is expensive to look up).
@@ -118,7 +118,7 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
 
         for i in range(0, 10):
             yield {
-                'file_path': f"root://atlas-experiment.cern.ch/dataset1/file{i}.root",
+                'file_path': [f"root://atlas-experiment.cern.ch/dataset1/file{i}.root"]
                 'adler32': b183712731,
                 'file_size': 0,
                 'file_events': 0,
