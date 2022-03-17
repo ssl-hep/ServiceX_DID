@@ -14,7 +14,7 @@ def test_put_file_add():
     responses.add(responses.PUT, 'http://servicex.org/files', status=206)
     sx = ServiceXAdapter("http://servicex.org")
     sx.put_file_add({
-        'file_path': ['root://foo.bar.ROOT'],
+        'paths': ['root://foo.bar.ROOT'],
         'adler32': '32',
         'file_size': 1024,
         'file_events': 3141
@@ -33,7 +33,7 @@ def test_put_file_add_with_prefix():
     responses.add(responses.PUT, 'http://servicex.org/files', status=206)
     sx = ServiceXAdapter("http://servicex.org", "xcache123:")
     sx.put_file_add({
-        'file_path': ['root://foo.bar.ROOT'],
+        'paths': ['root://foo.bar.ROOT'],
         'adler32': '32',
         'file_size': 1024,
         'file_events': 3141
