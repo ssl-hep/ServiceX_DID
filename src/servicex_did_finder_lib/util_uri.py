@@ -1,10 +1,13 @@
-from dataclasses import dataclass
 from typing import Dict, List
 import urllib
 
 
-@dataclass
 class ParsedDIDInfo:
+    def __init__(self, did: str, get_mode: str, file_count: int):
+        self.did = did
+        self.get_mode = get_mode
+        self.file_count = file_count
+
     # The did to pass into the library
     did: str
 
