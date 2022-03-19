@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Callable, Dict, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 import sys
 
 import pika
@@ -11,6 +11,7 @@ from make_it_sync import make_sync
 
 from servicex_did_finder_lib.did_summary import DIDSummary
 from servicex_did_finder_lib.did_logging import initialize_root_logger
+from servicex_did_finder_lib.util_uri import parse_did_uri
 from .servicex_adaptor import ServiceXAdapter
 
 # The type for the callback method to handle DID's, supplied by the user.
@@ -26,17 +27,46 @@ __logging = logging.getLogger(__name__)
 __logging.addHandler(logging.NullHandler())
 
 
+class _accumulator:
+    'Track or cache files depending on the mode we are operating in'
+    def __init__(self, sx: ServiceXAdapter, sum: DIDSummary, hold_till_end: bool):
+        self._servicex = sx
+        self._summary = sum
+        self._hold_till_end = hold_till_end
+        self._file_cache: List[Dict[str, Any]] = []
+
+    def add(self, file_info: Dict[str, Any]):
+        'Track and inject the file back into the system'
+        if self._hold_till_end:
+            self._file_cache.append(file_info)
+        else:
+            self._summary.add_file(file_info)
+            if self._summary.file_count == 1:
+                self._servicex.post_transform_start()
+            self._servicex.put_file_add(file_info)
+
+    def send_on(self, count):
+        'Send the accumulated files'
+        if self._hold_till_end:
+            self._hold_till_end = False
+            files = sorted(self._file_cache, key=lambda x: x['file_path'])
+            for file_info in files[0:count]:
+                self.add(file_info)
+
+
 async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[str, Any],
                               user_callback: UserDIDHandler):
-    summary = DIDSummary(did)
     start_time = datetime.now()
-    async for file_info in user_callback(did, info):
 
-        # Track the file, inject back into the system
-        summary.add_file(file_info)
-        if summary.file_count == 1:
-            servicex.post_transform_start()
-        servicex.put_file_add(file_info)
+    summary = DIDSummary(did)
+    did_info = parse_did_uri(did)
+    hold_till_end = did_info.file_count != -1
+    acc = _accumulator(servicex, summary, hold_till_end)
+
+    async for file_info in user_callback(did, info):
+        acc.add(file_info)
+
+    acc.send_on(did_info.file_count)
 
     # Simple error checking and reporting
     if summary.file_count == 0:
@@ -109,7 +139,7 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 def init_rabbit_mq(user_callback: UserDIDHandler,
                    rabbitmq_url: str, queue_name: str, retries: int,
                    retry_interval: float,
-                   file_prefix: str = None):
+                   file_prefix: str = None):  # type: ignore
     rabbitmq = None
     retry_count = 0
 
