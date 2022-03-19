@@ -63,7 +63,7 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
     hold_till_end = did_info.file_count != -1
     acc = _accumulator(servicex, summary, hold_till_end)
 
-    async for file_info in user_callback(did, info):
+    async for file_info in user_callback(did_info.did, info):
         acc.add(file_info)
 
     acc.send_on(did_info.file_count)

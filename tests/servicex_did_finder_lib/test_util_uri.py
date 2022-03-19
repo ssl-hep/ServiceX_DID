@@ -63,3 +63,12 @@ def test_uri_with_other_params():
     assert r.did == "forkit?stuff=hi"
     assert r.get_mode == "available"
     assert r.file_count == 10
+
+
+def test_uri_rucio():
+    'Make sure a uri with a scope in it works'
+    r = parse_did_uri('mc16_13TeV:mc16_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.deriv.DAOD_PHYS.e3601_e5984_s3126_s3136_r10724_r10726_p4164?files=20')
+
+    assert r.did == "mc16_13TeV:mc16_13TeV.361106.PowhegPythia8EvtGen_AZNLOCTEQ6L1_Zee.deriv.DAOD_PHYS.e3601_e5984_s3126_s3136_r10724_r10726_p4164"
+    assert r.get_mode == "all"
+    assert r.file_count == 20
