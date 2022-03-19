@@ -121,6 +121,34 @@ def test_one_file_call(rabbitmq, SXAdaptor):
     SXAdaptor.put_fileset_complete.assert_called_once()
 
 
+def test_one_file_call_with_param(rabbitmq, SXAdaptor):
+    'Test a working, simple, one file call with parameter'
+
+    seen_name = None
+
+    async def my_callback(did_name: str, info: Dict[str, Any]):
+        nonlocal seen_name
+        seen_name = did_name
+        yield {
+            'file_path': "fork/it/over",
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+
+    rabbitmq.send_did_request('hithere?files=10')
+
+    # Make sure callback was called
+    assert seen_name == 'hithere'
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_fileset_complete.assert_called_once()
+
+
 def test_failed_file(rabbitmq, SXAdaptor):
     'Test a callback that fails before any files are sent'
 
