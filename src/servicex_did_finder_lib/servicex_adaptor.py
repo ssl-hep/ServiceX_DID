@@ -72,7 +72,7 @@ class ServiceXAdapter:
             try:
                 mesg = {
                     "timestamp": datetime.now().isoformat(),
-                    "paths": [self._prefix_file(fp) for fp in file_info['file_path']],
+                    "paths": [self._prefix_file(fp) for fp in file_info['paths']],
                     'adler32': file_info['adler32'],
                     'file_size': file_info['file_size'],
                     'file_events': file_info['file_events']

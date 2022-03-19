@@ -102,7 +102,7 @@ def test_one_file_call(rabbitmq, SXAdaptor):
         nonlocal seen_name
         seen_name = did_name
         yield {
-            'file_path': ["fork/it/over"],
+            'paths': ["fork/it/over"],
             'adler32': 'no clue',
             'file_size': 22323,
             'file_events': 0,
@@ -172,7 +172,7 @@ def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
         nonlocal called
         called = True
         yield {
-            'file_path': ["fork/it/over"],
+            'paths': ["fork/it/over"],
             'adler32': 'no clue',
             'file_size': 22323,
             'file_events': 0,
@@ -226,13 +226,13 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = [
             {
-                'file_path': ['/tmp/foo'],
+                'paths': ['/tmp/foo'],
                 'adler32': '13e4f',
                 'file_size': 1024,
                 'file_events': 128
             },
             {
-                'file_path': ['/tmp/bar'],
+                'paths': ['/tmp/bar'],
                 'adler32': 'f33d',
                 'file_size': 2046,
                 'file_events': 64
