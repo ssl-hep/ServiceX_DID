@@ -102,7 +102,7 @@ def test_one_file_call(rabbitmq, SXAdaptor):
         nonlocal seen_name
         seen_name = did_name
         yield {
-            'file_path': "fork/it/over",
+            'paths': ["fork/it/over"],
             'adler32': 'no clue',
             'file_size': 22323,
             'file_events': 0,
@@ -172,7 +172,7 @@ def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
         nonlocal called
         called = True
         yield {
-            'file_path': "fork/it/over",
+            'paths': ["fork/it/over"],
             'adler32': 'no clue',
             'file_size': 22323,
             'file_events': 0,
@@ -226,13 +226,13 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = [
             {
-                'file_path': '/tmp/foo',
+                'paths': ['/tmp/foo'],
                 'adler32': '13e4f',
                 'file_size': 1024,
                 'file_events': 128
             },
             {
-                'file_path': '/tmp/bar',
+                'paths': ['/tmp/bar'],
                 'adler32': 'f33d',
                 'file_size': 2046,
                 'file_events': 64
@@ -245,8 +245,8 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
     SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 2
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['file_path'] == '/tmp/foo'
-    assert SXAdaptor.put_file_add.call_args_list[1][0][0]['file_path'] == '/tmp/bar'
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'][0] == '/tmp/foo'
+    assert SXAdaptor.put_file_add.call_args_list[1][0][0]['paths'][0] == '/tmp/bar'
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 2
@@ -271,6 +271,6 @@ async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
     SXAdaptor.put_fileset_complete.assert_not_called
 
     assert SXAdaptor.post_status_update.call_args[0][0] == \
-           'DID Finder found zero files for dataset 123-456'
+        'DID Finder found zero files for dataset 123-456'
 
     assert SXAdaptor.post_status_update.call_args[1]['severity'] == 'fatal'
