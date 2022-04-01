@@ -23,6 +23,11 @@ def parse_did_uri(uri: str) -> ParsedDIDInfo:
     the components we care about, and keeping the DID that needs to
     be passed down.
 
+    URI arguments parsed:
+
+    * `files` - Number of files to fetch (default is all)
+    * `get` - Mode to get the files (default is 'all'). Only "available" is also supported.
+
     Args:
         uri (str): DID from ServiceX
 

@@ -128,3 +128,13 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
 Note the parameter `request-id`: this marks the log messages with the request id that triggered this DID request. This will enable the system to track all log messages across all containers connected with this particular request id - making debugging a lot easier.
 
 The `start_did_finder` will configure the python root logger properly to dump messages with a request ID in them.
+
+## URI Format
+
+All the incoming DID's are expected to be URI's without the schema. As such, there are two parameters that are currently parsed by the library. The rest are let through and routed to the callback:
+
+* `files` - Number of files to report back to ServiceX. All files from the dataset are found, and then sorted in order. The first n files are then
+    sent back. Default is all files.
+* `get` - If the value is `all` (the default) then all files in the dataset must be returned. If the value is `available`, then only files that are accessible need be returned.
+
+As am example, if the following URI is given to ServiceX, "rucio://dataset_name?files=20&get=available", then the first 20 available files of the dataset will be processed by the rest of servicex.
