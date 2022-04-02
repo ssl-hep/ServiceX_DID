@@ -377,11 +377,15 @@ async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
     SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'] == ['/tmp/bar', 'others:/tmp/bar']
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'] == [
+        '/tmp/bar',
+        'others:/tmp/bar'
+        ]
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 1
     assert SXAdaptor.post_status_update.called_once()
+
 
 @pytest.mark.asyncio
 async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
