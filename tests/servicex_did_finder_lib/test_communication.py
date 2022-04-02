@@ -354,6 +354,36 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
 
 
 @pytest.mark.asyncio
+async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
+    async def my_user_callback(did, info):
+        return_values = [
+            {
+                'paths': ['/tmp/foo', 'others:/tmp/foo'],
+                'adler32': '13e4f',
+                'file_size': 1024,
+                'file_events': 128
+            },
+            {
+                'paths': ['/tmp/bar', 'others:/tmp/bar'],
+                'adler32': 'f33d',
+                'file_size': 2046,
+                'file_events': 64
+            }
+        ]
+        for v in return_values:
+            yield v
+
+    await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
+    SXAdaptor.post_transform_start.assert_called_once()
+
+    assert SXAdaptor.put_file_add.call_count == 1
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'] == ['/tmp/bar', 'others:/tmp/bar']
+
+    SXAdaptor.put_fileset_complete.assert_called_once
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 1
+    assert SXAdaptor.post_status_update.called_once()
+
+@pytest.mark.asyncio
 async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = []
