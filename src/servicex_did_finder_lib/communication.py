@@ -49,7 +49,7 @@ class _accumulator:
         'Send the accumulated files'
         if self._hold_till_end:
             self._hold_till_end = False
-            files = sorted(self._file_cache, key=lambda x: x['file_path'])
+            files = sorted(self._file_cache, key=lambda x: x['paths'])
             for file_info in files[0:count]:
                 self.add(file_info)
 

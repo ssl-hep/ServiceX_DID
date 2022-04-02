@@ -117,7 +117,12 @@ def test_one_file_call(rabbitmq, SXAdaptor):
     assert seen_name == 'hi-there'
 
     # Make sure the file was sent along, along with the completion
-    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_file_add.assert_called_once_with({
+        'paths': ['fork/it/over'],
+        'adler32': 'no clue',
+        'file_size': 22323,
+        'file_events': 0
+        })
     SXAdaptor.put_fileset_complete.assert_called_once()
 
 
@@ -130,7 +135,7 @@ def test_one_file_call_with_param(rabbitmq, SXAdaptor):
         nonlocal seen_name
         seen_name = did_name
         yield {
-            'file_path': "fork/it/over",
+            'paths': ["fork/it/over"],
             'adler32': 'no clue',
             'file_size': 22323,
             'file_events': 0,
@@ -290,13 +295,13 @@ async def test_run_file_fetch_one(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = [
             {
-                'file_path': '/tmp/foo',
+                'paths': ['/tmp/foo'],
                 'adler32': '13e4f',
                 'file_size': 1024,
                 'file_events': 128
             },
             {
-                'file_path': '/tmp/bar',
+                'paths': ['/tmp/bar'],
                 'adler32': 'f33d',
                 'file_size': 2046,
                 'file_events': 64
@@ -309,7 +314,7 @@ async def test_run_file_fetch_one(SXAdaptor, mocker):
     SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['file_path'] == '/tmp/bar'
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'] == ['/tmp/bar']
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 1
@@ -322,13 +327,13 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = [
             {
-                'file_path': '/tmp/bar',
+                'paths': ['/tmp/bar'],
                 'adler32': 'f33d',
                 'file_size': 2046,
                 'file_events': 64
             },
             {
-                'file_path': '/tmp/foo',
+                'paths': ['/tmp/foo'],
                 'adler32': '13e4f',
                 'file_size': 1024,
                 'file_events': 128
@@ -341,7 +346,7 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
     SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['file_path'] == '/tmp/bar'
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'][0] == '/tmp/bar'
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 1
