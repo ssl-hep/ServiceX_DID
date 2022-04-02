@@ -63,10 +63,14 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
     hold_till_end = did_info.file_count != -1
     acc = _accumulator(servicex, summary, hold_till_end)
 
-    async for file_info in user_callback(did_info.did, info):
-        acc.add(file_info)
+    try:
+        async for file_info in user_callback(did_info.did, info):
+            acc.add(file_info)
 
-    acc.send_on(did_info.file_count)
+        acc.send_on(did_info.file_count)
+    except Exception:
+        if did_info.get_mode == 'all':
+            raise
 
     # Simple error checking and reporting
     if summary.file_count == 0:
@@ -84,7 +88,7 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
             }
         )
 
-        servicex.post_status_update(f'Completed load of file in {elapsed_time} seconds')
+        servicex.post_status_update(f'Completed load of files in {elapsed_time} seconds')
 
 
 def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body,
