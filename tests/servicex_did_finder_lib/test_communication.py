@@ -221,6 +221,35 @@ def test_failed_file_after_good_with_avail(rabbitmq, SXAdaptor):
     SXAdaptor.post_status_update.assert_any_call("Completed load of files in 0 seconds")
 
 
+def test_failed_file_after_good_with_avail_limited_number(rabbitmq, SXAdaptor):
+    'Files are sent back, only available allowed, but want a certian number'
+
+    async def my_callback(did_name: str, info: Dict[str, Any]) \
+            -> AsyncGenerator[Dict[str, Any], None]:
+        yield {
+            'paths': ["fork/it/over1"],
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }
+        yield {
+            'paths': ["fork/it/over2"],
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }
+        raise Exception('that did not work')
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+    rabbitmq.send_did_request('hi-there?get=available&files=1')
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_fileset_complete.assert_called_once()
+    SXAdaptor.post_status_update.assert_any_call("Completed load of files in 0 seconds")
+
+
 def test_no_files_returned(rabbitmq, SXAdaptor):
     'Test a callback that fails before any files are sent'
 

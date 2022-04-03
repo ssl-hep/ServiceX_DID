@@ -67,10 +67,12 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
         async for file_info in user_callback(did_info.did, info):
             acc.add(file_info)
 
-        acc.send_on(did_info.file_count)
     except Exception:
         if did_info.get_mode == 'all':
             raise
+
+    # If we've been holding onto any files, we need to send them now.
+    acc.send_on(did_info.file_count)
 
     # Simple error checking and reporting
     if summary.file_count == 0:
