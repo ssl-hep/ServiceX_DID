@@ -265,7 +265,6 @@ async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_preflight_check.assert_not_called
 
     assert SXAdaptor.put_file_add.assert_not_called
     SXAdaptor.put_fileset_complete.assert_not_called
