@@ -158,7 +158,8 @@ def test_no_files_returned(rabbitmq, SXAdaptor):
 
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_not_called()
-    SXAdaptor.put_fileset_complete.assert_not_called()
+    SXAdaptor.put_fileset_complete.assert_called_once()
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 0
     SXAdaptor.post_status_update.assert_any_call(ANY, severity='fatal')
 
 
@@ -265,12 +266,11 @@ async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_preflight_check.assert_not_called
 
     assert SXAdaptor.put_file_add.assert_not_called
-    SXAdaptor.put_fileset_complete.assert_not_called
+    SXAdaptor.put_fileset_complete.assert_called_once()
 
-    assert SXAdaptor.post_status_update.call_args[0][0] == \
+    assert SXAdaptor.post_status_update.call_args_list[0][0][0] == \
         'DID Finder found zero files for dataset 123-456'
 
-    assert SXAdaptor.post_status_update.call_args[1]['severity'] == 'fatal'
+    assert SXAdaptor.post_status_update.call_args_list[0][1]['severity'] == 'fatal'
