@@ -1,6 +1,6 @@
 import argparse
 import json
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator, Dict, Optional
 from unittest.mock import ANY, MagicMock, patch
 
 import pika
@@ -152,6 +152,29 @@ def test_one_file_call_with_param(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
+
+
+def test_with_scope(rabbitmq, SXAdaptor):
+    seen_name: Optional[str] = None
+
+    async def my_callback(did_name: str, info: Dict[str, Any]):
+        nonlocal seen_name
+        seen_name = did_name
+        yield {
+            'paths': ["fork/it/over"],
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+
+    did = "cms:DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8" \
+        "/RunIIAutumn18NanoAODv7-Nano02Apr2020_102X_upgrade2018_realistic_v21_ext2-v1/NANOAODSIM"
+    rabbitmq.send_did_request(did)
+
+    assert seen_name == did
 
 
 def test_failed_file(rabbitmq, SXAdaptor):

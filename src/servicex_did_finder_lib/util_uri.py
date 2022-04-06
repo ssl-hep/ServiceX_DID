@@ -57,4 +57,4 @@ def parse_did_uri(uri: str) -> ParsedDIDInfo:
     if len(new_query) > 0:
         new_query = "?" + new_query
 
-    return ParsedDIDInfo(info.path + new_query, get_string, file_count)
+    return ParsedDIDInfo(info._replace(query="").geturl() + new_query, get_string, file_count)
