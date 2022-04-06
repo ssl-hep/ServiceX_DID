@@ -10,6 +10,14 @@ def test_plain_uri():
     assert r.file_count == -1
 
 
+def test_scoped_uri():
+    r = parse_did_uri('scope:forkit')
+
+    assert r.did == "scope:forkit"
+    assert r.get_mode == "all"
+    assert r.file_count == -1
+
+
 def test_uri_with_mode_avail():
     r = parse_did_uri('forkit?get=available')
 
