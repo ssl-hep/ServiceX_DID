@@ -44,7 +44,7 @@ class _accumulator:
             self._summary.add_file(file_info)
             if self._summary.file_count == 1:
                 self._servicex.post_transform_start()
-            # self._servicex.put_file_add(file_info)
+            self._servicex.put_file_add(file_info)
 
     def send_on(self, count):
         'Send the accumulated files'

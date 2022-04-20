@@ -27,7 +27,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import json
 from datetime import datetime
+
 import requests
+import aiohttp
+
 import logging
 
 
@@ -65,7 +68,7 @@ class ServiceXAdapter:
     def _prefix_file(self, file_path):
         return file_path if not self.file_prefix else self.file_prefix+file_path
 
-    def put_file_add(self, file_info):
+    async def put_file_add(self, file_info):
         success = False
         attempts = 0
         while not success and attempts < MAX_RETRIES:
@@ -77,10 +80,15 @@ class ServiceXAdapter:
                     'file_size': file_info['file_size'],
                     'file_events': file_info['file_events']
                 }
-                requests.put(self.endpoint + "/files", json=mesg)
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.put(self.endpoint + "/files", json=mesg) as response:
+                        if response.status != 200:
+                            self.logger.error(
+                                'could not send a put_file {}'.format(response.status))
                 self.logger.info(f"Metric: {json.dumps(mesg)}")
                 success = True
-            except requests.exceptions.ConnectionError:
+            except aiohttp.ClientConnectorError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '
                                       f'(try {attempts} out of {MAX_RETRIES}')
                 attempts += 1
