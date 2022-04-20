@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ServiceX_DID_Finder_lib"
-version = "1.1.1b3"
+version = "1.1.1b4"
 description = "ServiceX DID Library Routines"
 authors = ["Gordon Watts <gwatts@uw.edu>"]
 

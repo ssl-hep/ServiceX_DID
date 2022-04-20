@@ -36,7 +36,7 @@ class _accumulator:
         self._hold_till_end = hold_till_end
         self._file_cache: List[Dict[str, Any]] = []
 
-    def add(self, file_info: Dict[str, Any]):
+    async def add(self, file_info: Dict[str, Any]):
         'Track and inject the file back into the system'
         if self._hold_till_end:
             self._file_cache.append(file_info)
@@ -44,7 +44,7 @@ class _accumulator:
             self._summary.add_file(file_info)
             if self._summary.file_count == 1:
                 self._servicex.post_transform_start()
-            self._servicex.put_file_add(file_info)
+            await self._servicex.put_file_add(file_info)
 
     def send_on(self, count):
         'Send the accumulated files'
@@ -66,7 +66,7 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
 
     try:
         async for file_info in user_callback(did_info.did, info):
-            acc.add(file_info)
+            await acc.add(file_info)
 
     except Exception:
         if did_info.get_mode == 'all':
