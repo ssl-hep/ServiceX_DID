@@ -86,6 +86,7 @@ class ServiceXAdapter:
                         if response.status != 200:
                             self.logger.error(
                                 'could not send a put_file {}'.format(response.status))
+                        print(await response.text())
                 self.logger.info(f"Metric: {json.dumps(mesg)}")
                 success = True
             except aiohttp.ClientConnectorError:
