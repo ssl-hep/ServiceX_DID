@@ -6,7 +6,7 @@ from servicex_did_finder_lib.servicex_adaptor import ServiceXAdapter
 
 
 def test_version():
-    assert __version__ == '1.1.1b2'
+    assert __version__ == '1.1.1b3'
 
 
 # @responses.activate
