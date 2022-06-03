@@ -58,9 +58,9 @@ class _accumulator:
         'does a bulk put of files'
         for ifl in file_list:
             self._summary.add_file(ifl)
+            if self._summary.file_count == 1:
+                self._servicex.post_transform_start()
         self._servicex.put_file_add(file_list)
-        if self._summary.file_count == 1:
-            self._servicex.post_transform_start()
 
 
 async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[str, Any],
