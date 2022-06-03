@@ -445,8 +445,8 @@ async def test_run_file_bulk_fetch_loop(SXAdaptor, mocker):
     SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'][0] == '/tmp/foo'
-    assert SXAdaptor.put_file_add.call_args_list[1][0][0]['paths'][0] == '/tmp/bar'
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0][0]['paths'][0] == '/tmp/foo'
+    assert SXAdaptor.put_file_add.call_args_list[0][1][0][0]['paths'][0] == '/tmp/bar'
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 2
