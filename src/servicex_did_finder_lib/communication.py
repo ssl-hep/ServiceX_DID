@@ -29,6 +29,7 @@ __logging.addHandler(logging.NullHandler())
 
 class _accumulator:
     'Track or cache files depending on the mode we are operating in'
+
     def __init__(self, sx: ServiceXAdapter, sum: DIDSummary, hold_till_end: bool):
         self._servicex = sx
         self._summary = sum
@@ -53,6 +54,14 @@ class _accumulator:
             for file_info in files[0:count]:
                 self.add(file_info)
 
+    def send_bulk(self, file_list: List[Dict[str, Any]]):
+        'does a bulk put of files'
+        for ifl in file_list:
+            self._summary.add_file(ifl)
+        self._servicex.put_file_add(file_list)
+        if self._summary.file_count == 1:
+            self._servicex.post_transform_start()
+
 
 async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[str, Any],
                               user_callback: UserDIDHandler):
@@ -65,7 +74,10 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
 
     try:
         async for file_info in user_callback(did_info.did, info):
-            acc.add(file_info)
+            if type(file_info) is dict:
+                acc.add(file_info)
+            else:
+                acc.send_bulk(file_info)
 
     except Exception:
         if did_info.get_mode == 'all':

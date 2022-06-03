@@ -122,7 +122,7 @@ def test_one_file_call(rabbitmq, SXAdaptor):
         'adler32': 'no clue',
         'file_size': 22323,
         'file_events': 0
-        })
+    })
     SXAdaptor.put_fileset_complete.assert_called_once()
 
 
@@ -140,6 +140,39 @@ def test_one_file_call_with_param(rabbitmq, SXAdaptor):
             'file_size': 22323,
             'file_events': 0,
         }
+
+    init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
+                   retry_interval=10)
+
+    rabbitmq.send_did_request('hithere?files=10')
+
+    # Make sure callback was called
+    assert seen_name == 'hithere'
+
+    # Make sure the file was sent along, along with the completion
+    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_fileset_complete.assert_called_once()
+
+
+def test_bulk_file_call_with_param(rabbitmq, SXAdaptor):
+    'Test a working, simple, two file call with parameter'
+
+    seen_name = None
+
+    async def my_callback(did_name: str, info: Dict[str, Any]):
+        nonlocal seen_name
+        seen_name = did_name
+        yield [{
+            'paths': ["fork/it/over"],
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }, {
+            'paths': ["fork/it/over"],
+            'adler32': 'no clue',
+            'file_size': 22323,
+            'file_events': 0,
+        }]
 
     init_rabbit_mq(my_callback, 'http://myrabbit.com', 'test_queue_name', retries=12,
                    retry_interval=10)
@@ -390,6 +423,41 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
 
 
 @pytest.mark.asyncio
+async def test_run_file_bulk_fetch_loop(SXAdaptor, mocker):
+    async def my_user_callback(did, info):
+        return_values = [
+            {
+                'paths': ['/tmp/foo'],
+                'adler32': '13e4f',
+                'file_size': 1024,
+                'file_events': 128
+            },
+            {
+                'paths': ['/tmp/bar'],
+                'adler32': 'f33d',
+                'file_size': 2046,
+                'file_events': 64
+            }
+        ]
+        yield return_values
+
+    await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
+    SXAdaptor.post_transform_start.assert_called_once()
+
+    assert SXAdaptor.put_file_add.call_count == 1
+    assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'][0] == '/tmp/foo'
+    assert SXAdaptor.put_file_add.call_args_list[1][0][0]['paths'][0] == '/tmp/bar'
+
+    SXAdaptor.put_fileset_complete.assert_called_once
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 2
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['files-skipped'] == 0
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['total-events'] == 192
+    assert SXAdaptor.put_fileset_complete.call_args[0][0]['total-bytes'] == 3070
+
+    assert SXAdaptor.post_status_update.called_once()
+
+
+@pytest.mark.asyncio
 async def test_run_file_fetch_one(SXAdaptor, mocker):
     async def my_user_callback(did, info):
         return_values = [
@@ -479,7 +547,7 @@ async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
     assert SXAdaptor.put_file_add.call_args_list[0][0][0]['paths'] == [
         '/tmp/bar',
         'others:/tmp/bar'
-        ]
+    ]
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]['files'] == 1
