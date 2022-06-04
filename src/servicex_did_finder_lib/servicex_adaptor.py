@@ -34,6 +34,12 @@ import logging
 MAX_RETRIES = 3
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 class ServiceXAdapter:
     def __init__(self, endpoint, file_prefix=None):
         self.endpoint = endpoint
@@ -87,6 +93,32 @@ class ServiceXAdapter:
         if not success:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
                               f'message: {str(file_info)} - Ignoring error.')
+
+    def put_file_add_bulk(self, file_list):
+        for chunk in chunks(file_list, 20):
+            success = False
+            attempts = 0
+            mesg = []
+            for fi in chunk:
+                mesg.append({
+                    "timestamp": datetime.now().isoformat(),
+                    "paths": [self._prefix_file(fp) for fp in fi['paths']],
+                    'adler32': fi['adler32'],
+                    'file_size': fi['file_size'],
+                    'file_events': fi['file_events']
+                })
+            while not success and attempts < MAX_RETRIES:
+                try:
+                    requests.put(self.endpoint + "/files", json=mesg)
+                    self.logger.info(f"Metric: {json.dumps(mesg)}")
+                    success = True
+                except requests.exceptions.ConnectionError:
+                    self.logger.exception(f'Connection error to ServiceX App. Will retry '
+                                          f'(try {attempts} out of {MAX_RETRIES}')
+                    attempts += 1
+            if not success:
+                self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file_bulk '
+                                  f'message: {mesg} - Ignoring error.')
 
     def post_transform_start(self):
         success = False
