@@ -183,7 +183,7 @@ def test_bulk_file_call_with_param(rabbitmq, SXAdaptor):
     assert seen_name == 'hithere'
 
     # Make sure the file was sent along, along with the completion
-    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_file_add_bulk.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
 
 
