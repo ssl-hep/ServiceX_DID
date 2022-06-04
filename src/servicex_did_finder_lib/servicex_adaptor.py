@@ -117,8 +117,8 @@ class ServiceXAdapter:
                                           f'(try {attempts} out of {MAX_RETRIES}')
                     attempts += 1
             if not success:
-                self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file_bulk '
-                                  f'message: {mesg} - Ignoring error.')
+                self.logger.error(f'After {attempts} tries, failed to send ServiceX App '
+                                  f'a put_file_bulk message: {mesg} - Ignoring error.')
 
     def post_transform_start(self):
         success = False
