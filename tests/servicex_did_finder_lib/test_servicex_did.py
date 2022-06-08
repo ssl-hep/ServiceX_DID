@@ -51,10 +51,10 @@ def test_put_file_add_bulk():
     assert submitted[0]['file_events'] == 3141
     assert submitted[0]['file_size'] == 1024
 
-    assert submitted[0]['paths'][0] == 'root://foo.bar1.ROOT'
-    assert submitted[0]['adler32'] == '33'
-    assert submitted[0]['file_events'] == 3142
-    assert submitted[0]['file_size'] == 1025
+    assert submitted[1]['paths'][0] == 'root://foo.bar1.ROOT'
+    assert submitted[1]['adler32'] == '33'
+    assert submitted[1]['file_events'] == 3142
+    assert submitted[1]['file_size'] == 1025
 
 
 @responses.activate
