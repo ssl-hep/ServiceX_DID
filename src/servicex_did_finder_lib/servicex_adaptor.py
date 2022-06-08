@@ -71,18 +71,21 @@ class ServiceXAdapter:
     def _prefix_file(self, file_path):
         return file_path if not self.file_prefix else self.file_prefix+file_path
 
+    def _create_json(self, file_info):
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "paths": [self._prefix_file(fp) for fp in file_info['paths']],
+            'adler32': file_info['adler32'],
+            'file_size': file_info['file_size'],
+            'file_events': file_info['file_events']
+        }
+
     def put_file_add(self, file_info):
         success = False
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                mesg = {
-                    "timestamp": datetime.now().isoformat(),
-                    "paths": [self._prefix_file(fp) for fp in file_info['paths']],
-                    'adler32': file_info['adler32'],
-                    'file_size': file_info['file_size'],
-                    'file_events': file_info['file_events']
-                }
+                mesg = self._create_json(file_info)
                 requests.put(self.endpoint + "/files", json=mesg)
                 self.logger.info(f"Metric: {json.dumps(mesg)}")
                 success = True
@@ -95,18 +98,12 @@ class ServiceXAdapter:
                               f'message: {str(file_info)} - Ignoring error.')
 
     def put_file_add_bulk(self, file_list):
-        for chunk in chunks(file_list, 20):
+        for chunk in chunks(file_list, 30):
             success = False
             attempts = 0
             mesg = []
             for fi in chunk:
-                mesg.append({
-                    "timestamp": datetime.now().isoformat(),
-                    "paths": [self._prefix_file(fp) for fp in fi['paths']],
-                    'adler32': fi['adler32'],
-                    'file_size': fi['file_size'],
-                    'file_events': fi['file_events']
-                })
+                mesg.append(self._create_json(fi))
             while not success and attempts < MAX_RETRIES:
                 try:
                     requests.put(self.endpoint + "/files", json=mesg)
