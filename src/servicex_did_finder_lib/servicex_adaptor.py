@@ -32,12 +32,7 @@ import logging
 
 
 MAX_RETRIES = 3
-
-
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+CH_LEN = 30
 
 
 class ServiceXAdapter:
@@ -98,7 +93,10 @@ class ServiceXAdapter:
                               f'message: {str(file_info)} - Ignoring error.')
 
     def put_file_add_bulk(self, file_list):
-        for chunk in chunks(file_list, 30):
+        # we first chunk up file_list as it can be very large in
+        # case there are a lot of replicas and a lot of files.
+        chunks = [file_list[i:i + CH_LEN] for i in range(0, len(file_list), CH_LEN)]
+        for chunk in chunks:
             success = False
             attempts = 0
             mesg = []
