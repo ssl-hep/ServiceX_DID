@@ -51,15 +51,19 @@ class _accumulator:
         if self._hold_till_end:
             self._hold_till_end = False
             files = sorted(self._file_cache, key=lambda x: x["paths"])
-            for file_info in files[0:count]:
-                self.add(file_info)
+            self.send_bulk(files[:count])
 
     def send_bulk(self, file_list: List[Dict[str, Any]]):
         "does a bulk put of files"
-        for ifl in file_list:
-            self._summary.add_file(ifl)
-        self._servicex.put_file_add_bulk(file_list)
-        self._servicex.post_transform_start()
+        if self._hold_till_end:
+            for f in file_list:
+                self.add(f)
+        else:
+            if self._summary.file_count == 0:
+                self._servicex.post_transform_start()
+            for ifl in file_list:
+                self._summary.add_file(ifl)
+            self._servicex.put_file_add_bulk(file_list)
 
 
 async def run_file_fetch_loop(

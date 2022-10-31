@@ -176,7 +176,7 @@ def test_one_file_call_with_param(rabbitmq, SXAdaptor):
     assert seen_name == "hithere"
 
     # Make sure the file was sent along, along with the completion
-    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_file_add_bulk.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
 
 
@@ -405,7 +405,7 @@ def test_failed_file_after_good_with_avail_limited_number(rabbitmq, SXAdaptor):
     rabbitmq.send_did_request("hi-there?get=available&files=1")
 
     # Make sure the file was sent along, along with the completion
-    SXAdaptor.put_file_add.assert_called_once()
+    SXAdaptor.put_file_add_bulk.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
     SXAdaptor.post_status_update.assert_any_call("Completed load of files in 0 seconds")
 
@@ -597,8 +597,17 @@ async def test_run_file_fetch_one(SXAdaptor, mocker):
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
     SXAdaptor.post_transform_start.assert_called_once()
 
-    assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]["paths"] == ["/tmp/bar"]
+    assert SXAdaptor.put_file_add_bulk.call_count == 1
+    SXAdaptor.put_file_add_bulk.assert_called_with(
+        [
+            {
+                "paths": ["/tmp/bar"],
+                "adler32": "f33d",
+                "file_size": 2046,
+                "file_events": 64,
+            }
+        ]
+    )
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
@@ -630,8 +639,17 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
     SXAdaptor.post_transform_start.assert_called_once()
 
-    assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]["paths"][0] == "/tmp/bar"
+    assert SXAdaptor.put_file_add_bulk.call_count == 1
+    SXAdaptor.put_file_add_bulk.assert_called_with(
+        [
+            {
+                "paths": ["/tmp/bar"],
+                "adler32": "f33d",
+                "file_size": 2046,
+                "file_events": 64,
+            }
+        ]
+    )
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
@@ -661,11 +679,17 @@ async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
     SXAdaptor.post_transform_start.assert_called_once()
 
-    assert SXAdaptor.put_file_add.call_count == 1
-    assert SXAdaptor.put_file_add.call_args_list[0][0][0]["paths"] == [
-        "/tmp/bar",
-        "others:/tmp/bar",
-    ]
+    assert SXAdaptor.put_file_add_bulk.call_count == 1
+    SXAdaptor.put_file_add_bulk.assert_called_with(
+        [
+            {
+                "paths": ["/tmp/bar", "others:/tmp/bar"],
+                "adler32": "f33d",
+                "file_size": 2046,
+                "file_events": 64,
+            }
+        ]
+    )
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
