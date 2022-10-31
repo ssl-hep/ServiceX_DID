@@ -1,6 +1,6 @@
 import argparse
 import json
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, Optional
 from unittest.mock import ANY, MagicMock, patch
 
 import pika
