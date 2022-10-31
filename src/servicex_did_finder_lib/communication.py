@@ -20,7 +20,7 @@ UserDIDHandler = Callable[[str, Dict[str, Any]], AsyncGenerator[Dict[str, Any], 
 # Given name, build the RabbitMQ queue name by appending this.
 # This is backed into how ServiceX works - do not change unless it
 # is also changed in the ServiceX_App
-QUEUE_NAME_POSTFIX = '_did_requests'
+QUEUE_NAME_POSTFIX = "_did_requests"
 
 # Easy to use local logger
 __logging = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ __logging.addHandler(logging.NullHandler())
 
 
 class _accumulator:
-    'Track or cache files depending on the mode we are operating in'
+    "Track or cache files depending on the mode we are operating in"
 
     def __init__(self, sx: ServiceXAdapter, sum: DIDSummary, hold_till_end: bool):
         self._servicex = sx
@@ -37,7 +37,7 @@ class _accumulator:
         self._file_cache: List[Dict[str, Any]] = []
 
     def add(self, file_info: Dict[str, Any]):
-        'Track and inject the file back into the system'
+        "Track and inject the file back into the system"
         if self._hold_till_end:
             self._file_cache.append(file_info)
         else:
@@ -47,23 +47,27 @@ class _accumulator:
             self._servicex.put_file_add(file_info)
 
     def send_on(self, count):
-        'Send the accumulated files'
+        "Send the accumulated files"
         if self._hold_till_end:
             self._hold_till_end = False
-            files = sorted(self._file_cache, key=lambda x: x['paths'])
+            files = sorted(self._file_cache, key=lambda x: x["paths"])
             for file_info in files[0:count]:
                 self.add(file_info)
 
     def send_bulk(self, file_list: List[Dict[str, Any]]):
-        'does a bulk put of files'
+        "does a bulk put of files"
         for ifl in file_list:
             self._summary.add_file(ifl)
         self._servicex.put_file_add_bulk(file_list)
         self._servicex.post_transform_start()
 
 
-async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[str, Any],
-                              user_callback: UserDIDHandler):
+async def run_file_fetch_loop(
+    did: str,
+    servicex: ServiceXAdapter,
+    info: Dict[str, Any],
+    user_callback: UserDIDHandler,
+):
     start_time = datetime.now()
 
     summary = DIDSummary(did)
@@ -79,7 +83,7 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
                 acc.send_bulk(file_info)
 
     except Exception:
-        if did_info.get_mode == 'all':
+        if did_info.get_mode == "all":
             raise
 
     # If we've been holding onto any files, we need to send them now.
@@ -87,10 +91,11 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
 
     # Simple error checking and reporting
     if summary.file_count == 0:
-        servicex.post_status_update(f'DID Finder found zero files for dataset {did}',
-                                    severity='fatal')
+        servicex.post_status_update(
+            f"DID Finder found zero files for dataset {did}", severity="fatal"
+        )
 
-    elapsed_time = int((datetime.now()-start_time).total_seconds())
+    elapsed_time = int((datetime.now() - start_time).total_seconds())
     servicex.put_fileset_complete(
         {
             "files": summary.file_count,
@@ -101,12 +106,13 @@ async def run_file_fetch_loop(did: str, servicex: ServiceXAdapter, info: Dict[st
         }
     )
 
-    servicex.post_status_update(f'Completed load of files in {elapsed_time} seconds')
+    servicex.post_status_update(f"Completed load of files in {elapsed_time} seconds")
 
 
-def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, properties, body,
-                       file_prefix=None):
-    '''rabbit_mq_callback Respond to RabbitMQ Message
+def rabbit_mq_callback(
+    user_callback: UserDIDHandler, channel, method, properties, body, file_prefix=None
+):
+    """rabbit_mq_callback Respond to RabbitMQ Message
 
     When a request to resolve a DID comes into the DID finder, we
     respond with this callback. This callback will remain active
@@ -119,19 +125,21 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
         properties ([type]): Properties of the message
         body ([type]): The body (json for us) of the message
         file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
-    '''
+    """
     request_id = None  # set this in case we get an exception while loading request
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
-        did = did_request['did']
-        request_id = did_request['request_id']
-        __logging.info(f'Received DID request {did_request}', extra={'requestId': request_id})
-        servicex = ServiceXAdapter(did_request['service-endpoint'], file_prefix)
+        did = did_request["did"]
+        request_id = did_request["request_id"]
+        __logging.info(
+            f"Received DID request {did_request}", extra={"requestId": request_id}
+        )
+        servicex = ServiceXAdapter(did_request["service-endpoint"], file_prefix)
         servicex.post_status_update("DID Request received")
 
         info = {
-            'request-id': request_id,
+            "request-id": request_id,
         }
 
         # Process the request and resolve the DID
@@ -140,23 +148,30 @@ def rabbit_mq_callback(user_callback: UserDIDHandler, channel, method, propertie
 
         except Exception as e:
             _, exec_value, _ = sys.exc_info()
-            __logging.exception('DID Request Failed', extra={'requestId': request_id})
-            servicex.post_status_update(f'DID Request Failed for id {request_id}: '
-                                        f'{str(e)} - {exec_value}',
-                                        severity='fatal')
+            __logging.exception("DID Request Failed", extra={"requestId": request_id})
+            servicex.post_status_update(
+                f"DID Request Failed for id {request_id}: " f"{str(e)} - {exec_value}",
+                severity="fatal",
+            )
             raise
 
     except Exception as e:
-        __logging.exception(f'DID request failed {str(e)}', extra={'requestId': request_id})
+        __logging.exception(
+            f"DID request failed {str(e)}", extra={"requestId": request_id}
+        )
 
     finally:
         channel.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def init_rabbit_mq(user_callback: UserDIDHandler,
-                   rabbitmq_url: str, queue_name: str, retries: int,
-                   retry_interval: float,
-                   file_prefix: str = None):  # type: ignore
+def init_rabbit_mq(
+    user_callback: UserDIDHandler,
+    rabbitmq_url: str,
+    queue_name: str,
+    retries: int,
+    retry_interval: float,
+    file_prefix: str = None,
+):  # type: ignore
     rabbitmq = None
     retry_count = 0
 
@@ -168,28 +183,35 @@ def init_rabbit_mq(user_callback: UserDIDHandler,
 
             __logging.info("Connected to RabbitMQ. Ready to start consuming requests")
 
-            _channel.basic_consume(queue=queue_name,
-                                   auto_ack=False,
-                                   on_message_callback=lambda c, m, p, b:
-                                   rabbit_mq_callback(user_callback, c, m, p, b, file_prefix))
+            _channel.basic_consume(
+                queue=queue_name,
+                auto_ack=False,
+                on_message_callback=lambda c, m, p, b: rabbit_mq_callback(
+                    user_callback, c, m, p, b, file_prefix
+                ),
+            )
             _channel.start_consuming()
 
         except pika.exceptions.AMQPConnectionError:  # type: ignore
             rabbitmq = None
             retry_count += 1
             if retry_count <= retries:
-                __logging.exception(f'Failed to connect to RabbitMQ at {rabbitmq_url} '
-                                    f'(try #{retry_count}). Waiting {retry_interval} seconds '
-                                    'before trying again')
+                __logging.exception(
+                    f"Failed to connect to RabbitMQ at {rabbitmq_url} "
+                    f"(try #{retry_count}). Waiting {retry_interval} seconds "
+                    "before trying again"
+                )
                 time.sleep(retry_interval)
             else:
-                __logging.exception(f'Failed to connect to RabbitMQ. Giving Up after {retry_count}'
-                                    ' tries')
+                __logging.exception(
+                    f"Failed to connect to RabbitMQ. Giving Up after {retry_count}"
+                    " tries"
+                )
                 raise
 
 
 def add_did_finder_cnd_arguments(parser: argparse.ArgumentParser):
-    '''add_did_finder_cnd_arguments Add required arguments to a parser
+    """add_did_finder_cnd_arguments Add required arguments to a parser
 
     If you need to parse command line arguments for some special configuration, create your
     own argument parser, and call this function to make sure the arguments needed
@@ -200,17 +222,26 @@ def add_did_finder_cnd_arguments(parser: argparse.ArgumentParser):
     Args:
         parser (argparse.ArgumentParser): The argument parser. Arguments needed for the
                                           did finder/servicex communication will be added.
-    '''
-    parser.add_argument('--rabbit-uri', dest="rabbit_uri", action='store', required=True)
-    parser.add_argument('--prefix', dest="prefix", action='store', required=False,
-                        default="",
-                        help='Prefix to add to use a caching proxy for URIs')
+    """
+    parser.add_argument(
+        "--rabbit-uri", dest="rabbit_uri", action="store", required=True
+    )
+    parser.add_argument(
+        "--prefix",
+        dest="prefix",
+        action="store",
+        required=False,
+        default="",
+        help="Prefix to add to use a caching proxy for URIs",
+    )
 
 
-def start_did_finder(did_finder_name: str,
-                     callback: UserDIDHandler,
-                     parsed_args: Optional[argparse.Namespace] = None):
-    '''start_did_finder Start the DID finder
+def start_did_finder(
+    did_finder_name: str,
+    callback: UserDIDHandler,
+    parsed_args: Optional[argparse.Namespace] = None,
+):
+    """start_did_finder Start the DID finder
 
     Top level method that starts the DID finder, hooking it up to rabbitmq queues, etc.,
     and sets up the callback to be called each time ServiceX wants to render a DID into
@@ -231,7 +262,7 @@ def start_did_finder(did_finder_name: str,
                                                          Defaults to None (automatically
                                                          parses)
                                                          command line arguments, create
-    '''
+    """
     # Setup command line parsing
     if parsed_args is None:
         parser = argparse.ArgumentParser()
@@ -242,8 +273,10 @@ def start_did_finder(did_finder_name: str,
     initialize_root_logger(did_finder_name)
 
     # Start up rabbit mq and also callbacks
-    init_rabbit_mq(callback,
-                   parsed_args.rabbit_uri,
-                   f'{did_finder_name}{QUEUE_NAME_POSTFIX}',
-                   retries=12,
-                   retry_interval=10)
+    init_rabbit_mq(
+        callback,
+        parsed_args.rabbit_uri,
+        f"{did_finder_name}{QUEUE_NAME_POSTFIX}",
+        retries=12,
+        retry_interval=10,
+    )
