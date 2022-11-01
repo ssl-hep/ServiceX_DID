@@ -9,20 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-    - name: Get the version
-      id: get_version
-      run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-    - name: Install poetry
-      uses: Gr1N/setup-poetry@v4
-    - name: Build
-      run: |
-        poetry version ${{ steps.get_version.outputs.VERSION }}
-    - name: Build and publish to pypi
-      uses: JRubics/poetry-publish@v1.6
-      with:
-        pypi_token: ${{ secrets.pypi_password_sx_did_lib }}
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+      - name: Install poetry
+        uses: Gr1N/setup-poetry@v7
+      - name: Build
+        run: |
+          poetry version ${{ steps.get_version.outputs.VERSION }}
+      - name: Build and publish to pypi
+        uses: JRubics/poetry-publish@v1.6
+        with:
+          pypi_token: ${{ secrets.pypi_password_sx_did_lib }}
