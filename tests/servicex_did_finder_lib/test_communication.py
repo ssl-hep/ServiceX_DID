@@ -28,7 +28,7 @@ class RabbitAdaptor:
         body = json.dumps(
             {
                 "did": did_name,
-                "request_id": "000-111-222-444",
+                "dataset_id": "000-111-222-444",
                 "service-endpoint": "http://localhost:2334",
             }
         )
