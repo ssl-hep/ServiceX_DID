@@ -130,20 +130,20 @@ def rabbit_mq_callback(
         body ([type]): The body (json for us) of the message
         file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
     """
-    request_id = None  # set this in case we get an exception while loading request
+    dataset_id = None  # set this in case we get an exception while loading request
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
         did = did_request["did"]
-        request_id = did_request["request_id"]
+        dataset_id = did_request["dataset_id"]
         __logging.info(
-            f"Received DID request {did_request}", extra={"requestId": request_id}
+            f"Received DID request {did_request}", extra={"dataset_id": dataset_id}
         )
         servicex = ServiceXAdapter(did_request["service-endpoint"], file_prefix)
         servicex.post_status_update("DID Request received")
 
         info = {
-            "request-id": request_id,
+            "dataset-id": dataset_id,
         }
 
         # Process the request and resolve the DID
@@ -152,16 +152,16 @@ def rabbit_mq_callback(
 
         except Exception as e:
             _, exec_value, _ = sys.exc_info()
-            __logging.exception("DID Request Failed", extra={"requestId": request_id})
+            __logging.exception("DID Request Failed", extra={"dataset_id": dataset_id})
             servicex.post_status_update(
-                f"DID Request Failed for id {request_id}: " f"{str(e)} - {exec_value}",
+                f"DID Request Failed for id {dataset_id}: " f"{str(e)} - {exec_value}",
                 severity="fatal",
             )
             raise
 
     except Exception as e:
         __logging.exception(
-            f"DID request failed {str(e)}", extra={"requestId": request_id}
+            f"DID request failed {str(e)}", extra={"dataset_id": dataset_id}
         )
 
     finally:

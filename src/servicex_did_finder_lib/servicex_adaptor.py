@@ -62,6 +62,8 @@ class ServiceXAdapter:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a status '
                               f'message: {str(status_msg)} - Ignoring error.')
 
+    # not needed anymore
+    # ????
     def _prefix_file(self, file_path):
         return file_path if not self.file_prefix else self.file_prefix+file_path
 
@@ -114,6 +116,9 @@ class ServiceXAdapter:
                 self.logger.error(f'After {attempts} tries, failed to send ServiceX App '
                                   f'a put_file_bulk message: {mesg} - Ignoring error.')
 
+    # should be removed...
+    # transforms can start as soon as request has been made. No need to wait for this.
+    # whole endpoint '/start' is not needed.
     def post_transform_start(self):
         success = False
         attempts = 0
