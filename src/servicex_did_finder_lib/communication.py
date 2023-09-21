@@ -136,10 +136,16 @@ def rabbit_mq_callback(
         did_request = json.loads(body)
         did = did_request["did"]
         dataset_id = did_request["dataset_id"]
+        request_id = did_request["request_id"]
+        endpoint = did_request["endpoint"]
         __logging.info(
-            f"Received DID request {did_request}", extra={"dataset_id": dataset_id}
+            f"Received DID request {did_request}",
+            extra={"request_id": request_id, "dataset_id": dataset_id}
         )
-        servicex = ServiceXAdapter(did_request["service-endpoint"], file_prefix)
+        servicex = ServiceXAdapter(request_id=request_id,
+                                   dataset_id=dataset_id,
+                                   endpoint=endpoint,
+                                   file_prefix=file_prefix)
         servicex.post_status_update("DID Request received")
 
         info = {

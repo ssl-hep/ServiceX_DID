@@ -35,8 +35,10 @@ MAX_RETRIES = 3
 
 
 class ServiceXAdapter:
-    def __init__(self, endpoint, file_prefix=None):
+    def __init__(self, endpoint, dataset_id, request_id=None, file_prefix=None):
         self.endpoint = endpoint
+        self.request_id = request_id
+        self.dataset_id = dataset_id
         self.file_prefix = file_prefix
 
         self.logger = logging.getLogger(__name__)
@@ -47,7 +49,7 @@ class ServiceXAdapter:
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                requests.post(self.endpoint + "/status", data={
+                requests.post(f"{self.endpoint}{self.request_id}/status", data={
                     "timestamp": datetime.now().isoformat(),
                     "source": "DID Finder",
                     "severity": severity,
@@ -82,7 +84,7 @@ class ServiceXAdapter:
         while not success and attempts < MAX_RETRIES:
             try:
                 mesg = self._create_json(file_info)
-                requests.put(self.endpoint + "/files", json=mesg)
+                requests.put(f"{self.endpoint}{self.dataset_id}/files", json=mesg)
                 self.logger.info(f"Metric: {json.dumps(mesg)}")
                 success = True
             except requests.exceptions.ConnectionError:
@@ -105,7 +107,7 @@ class ServiceXAdapter:
                 mesg.append(self._create_json(fi))
             while not success and attempts < MAX_RETRIES:
                 try:
-                    requests.put(self.endpoint + "/files", json=mesg)
+                    requests.put(f"{self.endpoint}{self.dataset_id}/files", json=mesg)
                     self.logger.info(f"Metric: {json.dumps(mesg)}")
                     success = True
                 except requests.exceptions.ConnectionError:
@@ -116,15 +118,12 @@ class ServiceXAdapter:
                 self.logger.error(f'After {attempts} tries, failed to send ServiceX App '
                                   f'a put_file_bulk message: {mesg} - Ignoring error.')
 
-    # should be removed...
-    # transforms can start as soon as request has been made. No need to wait for this.
-    # whole endpoint '/start' is not needed.
     def post_transform_start(self):
         success = False
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                requests.post(self.endpoint + "/start")
+                requests.post(f"{self.endpoint}{self.request_id}/start")
                 success = True
             except requests.exceptions.ConnectionError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '
@@ -139,7 +138,7 @@ class ServiceXAdapter:
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                requests.put(self.endpoint + "/complete", json=summary)
+                requests.put(f"{self.endpoint}{self.dataset_id}/complete", json=summary)
                 success = True
             except requests.exceptions.ConnectionError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '
