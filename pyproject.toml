@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "ServiceX_DID_Finder_lib"
-version = "1.0.0a1"
+version = "1.4.3a1"
 description = "ServiceX DID Library Routines"
 authors = ["Gordon Watts <gwatts@uw.edu>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 pika = "1.1.0"
 make-it-sync = "^1.0.0"
 requests = "^2.25.0"
