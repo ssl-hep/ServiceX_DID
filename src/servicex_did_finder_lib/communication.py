@@ -26,6 +26,8 @@ QUEUE_NAME_POSTFIX = "_did_requests"
 __logging = logging.getLogger(__name__)
 __logging.addHandler(logging.NullHandler())
 
+# TODO: get rid of different modes. It should always be batch.
+
 
 class _accumulator:
     "Track or cache files depending on the mode we are operating in"
@@ -42,8 +44,6 @@ class _accumulator:
             self._file_cache.append(file_info)
         else:
             self._summary.add_file(file_info)
-            if self._summary.file_count == 1:
-                self._servicex.post_transform_start()
             self._servicex.put_file_add(file_info)
 
     def send_on(self, count):
@@ -59,8 +59,6 @@ class _accumulator:
             for f in file_list:
                 self.add(f)
         else:
-            if self._summary.file_count == 0:
-                self._servicex.post_transform_start()
             for ifl in file_list:
                 self._summary.add_file(ifl)
             self._servicex.put_file_add_bulk(file_list)
@@ -109,8 +107,8 @@ async def run_file_fetch_loop(
             "elapsed-time": elapsed_time,
         }
     )
-
     servicex.post_status_update(f"Completed load of files in {elapsed_time} seconds")
+    servicex.post_transform_start()
 
 
 def rabbit_mq_callback(
