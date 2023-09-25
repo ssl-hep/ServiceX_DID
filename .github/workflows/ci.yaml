@@ -28,6 +28,7 @@ jobs:
           poetry install
           pip list
       - name: Lint with Flake8
+        if: github.event_name == 'push' && matrix.python-version == 3.8
         run: |
           poetry run flake8
       - name: Test with pytest
