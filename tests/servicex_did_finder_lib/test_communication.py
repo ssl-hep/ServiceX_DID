@@ -27,9 +27,10 @@ class RabbitAdaptor:
         properties = MagicMock()
         body = json.dumps(
             {
+                "request_id": '123-456',
                 "did": did_name,
                 "dataset_id": "000-111-222-444",
-                "service-endpoint": "http://localhost:2334",
+                "endpoint": "http://localhost:2334/",
             }
         )
 
