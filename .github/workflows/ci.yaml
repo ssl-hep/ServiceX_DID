@@ -25,10 +25,9 @@ jobs:
         uses: Gr1N/setup-poetry@v8
       - name: Install dependencies
         run: |
-          poetry install
+          poetry install --with dev
           pip list
       - name: Lint with Flake8
-        if: github.event_name == 'push' && matrix.python-version == 3.8
         run: |
           poetry run flake8
       - name: Test with pytest
