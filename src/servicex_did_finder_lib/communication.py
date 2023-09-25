@@ -144,7 +144,6 @@ def rabbit_mq_callback(
                                    dataset_id=dataset_id,
                                    endpoint=endpoint,
                                    file_prefix=file_prefix)
-        servicex.post_status_update("DID Request received")
 
         info = {
             "dataset-id": dataset_id,
