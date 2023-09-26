@@ -129,6 +129,7 @@ def rabbit_mq_callback(
         file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
     """
     dataset_id = None  # set this in case we get an exception while loading request
+    request_id = None
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
