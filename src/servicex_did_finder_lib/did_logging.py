@@ -4,10 +4,10 @@ import os
 
 class DIDFormatter(logging.Formatter):
     """
-    Need a customer formatter to allow for logging with request ids that vary.
-    Normally log messages are "level instance component request_id msg" and
-    request_id gets set by initialize_logging but we need a handler that'll let
-    us pass in the request id and have that embedded in the log message
+    Need a customer formatter to allow for logging with dataset ids that vary.
+    Normally log messages are "level instance component dataset_id msg" and
+    dataset_id gets set by initialize_logging but we need a handler that'll let
+    us pass in the dataset id and have that embedded in the log message
     """
 
     def format(self, record: logging.LogRecord) -> str:
@@ -18,10 +18,10 @@ class DIDFormatter(logging.Formatter):
         :return: formatted log message
         """
 
-        if hasattr(record, "requestId"):
+        if hasattr(record, "datasetId"):
             return super().format(record)
         else:
-            setattr(record, "requestId", None)
+            setattr(record, "datasetId", None)
             return super().format(record)
 
 
@@ -36,7 +36,7 @@ def initialize_root_logger(did_scheme: str):
     instance = os.environ.get('INSTANCE_NAME', 'Unknown')
     formatter = DIDFormatter('%(levelname)s ' +
                              f"{instance} {did_scheme}_did_finder " +
-                             '%(requestId)s %(message)s')
+                             '%(datasetId)s %(message)s')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.setLevel(logging.INFO)
