@@ -521,7 +521,6 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add.call_count == 2
     assert SXAdaptor.put_file_add.call_args_list[0][0][0]["paths"][0] == "/tmp/foo"
@@ -556,7 +555,6 @@ async def test_run_file_bulk_fetch_loop(SXAdaptor, mocker):
         yield return_values
 
     await run_file_fetch_loop("123-456", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add_bulk.call_count == 1
     assert (
@@ -596,7 +594,6 @@ async def test_run_file_fetch_one(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add_bulk.call_count == 1
     SXAdaptor.put_file_add_bulk.assert_called_with(
@@ -638,7 +635,6 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add_bulk.call_count == 1
     SXAdaptor.put_file_add_bulk.assert_called_with(
@@ -678,7 +674,6 @@ async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
             yield v
 
     await run_file_fetch_loop("123-456?files=1", SXAdaptor, {}, my_user_callback)
-    SXAdaptor.post_transform_start.assert_called_once()
 
     assert SXAdaptor.put_file_add_bulk.call_count == 1
     SXAdaptor.put_file_add_bulk.assert_called_with(

@@ -88,15 +88,3 @@ def test_put_file_add_with_prefix():
     assert submitted['adler32'] == '32'
     assert submitted['file_events'] == 3141
     assert submitted['file_size'] == 1024
-
-
-@responses.activate
-def test_post_transform_start():
-    responses.add(responses.POST,
-                  'http://servicex.org/servicex/internal/transformation/123-456/start',
-                  status=206)
-
-    sx = ServiceXAdapter(
-        "http://servicex.org/servicex/internal/transformation/", '12345', request_id='123-456')
-    sx.post_transform_start()
-    assert len(responses.calls) == 1

@@ -108,7 +108,6 @@ async def run_file_fetch_loop(
         }
     )
     servicex.post_status_update(f"Completed load of files in {elapsed_time} seconds")
-    servicex.post_transform_start()
 
 
 def rabbit_mq_callback(
