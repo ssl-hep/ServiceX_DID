@@ -44,6 +44,8 @@ class ServiceXAdapter:
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
 
+    # TODO - remove. did finder should not know about request_id and call any
+    # endpoint with request_id.
     def post_status_update(self, status_msg, severity="info"):
         success = False
         attempts = 0
@@ -64,8 +66,7 @@ class ServiceXAdapter:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a status '
                               f'message: {str(status_msg)} - Ignoring error.')
 
-    # not needed anymore
-    # ????
+    # TODO - remove
     def _prefix_file(self, file_path):
         return file_path if not self.file_prefix else self.file_prefix+file_path
 
