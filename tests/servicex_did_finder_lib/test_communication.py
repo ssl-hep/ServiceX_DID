@@ -1,7 +1,7 @@
 import argparse
 import json
 from typing import Any, AsyncGenerator, Dict, Optional
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pika
 import pytest
@@ -27,7 +27,6 @@ class RabbitAdaptor:
         properties = MagicMock()
         body = json.dumps(
             {
-                "request_id": '123-456',
                 "did": did_name,
                 "dataset_id": "000-111-222-444",
                 "endpoint": "http://localhost:2334/",
@@ -315,7 +314,6 @@ def test_failed_file(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_not_called()
     SXAdaptor.put_fileset_complete.assert_not_called()
-    SXAdaptor.post_status_update.assert_any_call(ANY, severity="fatal")
 
 
 def test_failed_file_after_good(rabbitmq, SXAdaptor):
@@ -344,7 +342,6 @@ def test_failed_file_after_good(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_not_called()
-    SXAdaptor.post_status_update.assert_any_call(ANY, severity="fatal")
 
 
 def test_failed_file_after_good_with_avail(rabbitmq, SXAdaptor):
@@ -373,7 +370,6 @@ def test_failed_file_after_good_with_avail(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
-    SXAdaptor.post_status_update.assert_any_call("Completed load of files in 0 seconds")
 
 
 def test_failed_file_after_good_with_avail_limited_number(rabbitmq, SXAdaptor):
@@ -408,7 +404,6 @@ def test_failed_file_after_good_with_avail_limited_number(rabbitmq, SXAdaptor):
     # Make sure the file was sent along, along with the completion
     SXAdaptor.put_file_add_bulk.assert_called_once()
     SXAdaptor.put_fileset_complete.assert_called_once()
-    SXAdaptor.post_status_update.assert_any_call("Completed load of files in 0 seconds")
 
 
 def test_no_files_returned(rabbitmq, SXAdaptor):
@@ -433,7 +428,6 @@ def test_no_files_returned(rabbitmq, SXAdaptor):
     SXAdaptor.put_file_add.assert_not_called()
     SXAdaptor.put_fileset_complete.assert_called_once()
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 0
-    SXAdaptor.post_status_update.assert_any_call(ANY, severity="fatal")
 
 
 def test_rabbitmq_connection_failure(rabbitmq_fail_once, SXAdaptor):
@@ -532,8 +526,6 @@ async def test_run_file_fetch_loop(SXAdaptor, mocker):
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["total-events"] == 192
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["total-bytes"] == 3070
 
-    assert SXAdaptor.post_status_update.called_once()
-
 
 @pytest.mark.asyncio
 async def test_run_file_bulk_fetch_loop(SXAdaptor, mocker):
@@ -569,8 +561,6 @@ async def test_run_file_bulk_fetch_loop(SXAdaptor, mocker):
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files-skipped"] == 0
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["total-events"] == 192
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["total-bytes"] == 3070
-
-    assert SXAdaptor.post_status_update.called_once()
 
 
 @pytest.mark.asyncio
@@ -609,7 +599,6 @@ async def test_run_file_fetch_one(SXAdaptor, mocker):
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
-    assert SXAdaptor.post_status_update.called_once()
 
 
 @pytest.mark.asyncio
@@ -650,7 +639,6 @@ async def test_run_file_fetch_one_reverse(SXAdaptor, mocker):
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
-    assert SXAdaptor.post_status_update.called_once()
 
 
 @pytest.mark.asyncio
@@ -689,7 +677,6 @@ async def test_run_file_fetch_one_multi(SXAdaptor, mocker):
 
     SXAdaptor.put_fileset_complete.assert_called_once
     assert SXAdaptor.put_fileset_complete.call_args[0][0]["files"] == 1
-    assert SXAdaptor.post_status_update.called_once()
 
 
 @pytest.mark.asyncio
@@ -703,10 +690,3 @@ async def test_run_file_fetch_loop_bad_did(SXAdaptor, mocker):
 
     assert SXAdaptor.put_file_add.assert_not_called
     SXAdaptor.put_fileset_complete.assert_called_once()
-
-    assert (
-        SXAdaptor.post_status_update.call_args_list[0][0][0]
-        == "DID Finder found zero files for dataset 123-456"
-    )
-
-    assert SXAdaptor.post_status_update.call_args_list[0][1]["severity"] == "fatal"

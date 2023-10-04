@@ -68,23 +68,3 @@ def test_put_file_add_bulk_large():
         'file_events': 3141
     }] * 32)
     assert len(responses.calls) == 2
-
-
-@responses.activate
-def test_put_file_add_with_prefix():
-
-    responses.add(responses.PUT, 'http://servicex.org/12345/files', status=206)
-    sx = ServiceXAdapter("http://servicex.org/", '12345', file_prefix="xcache123:")
-    sx.put_file_add({
-        'paths': ['root://foo.bar.ROOT'],
-        'adler32': '32',
-        'file_size': 1024,
-        'file_events': 3141
-    })
-
-    assert len(responses.calls) == 1
-    submitted = json.loads(responses.calls[0].request.body)
-    assert submitted['paths'][0] == 'xcache123:root://foo.bar.ROOT'
-    assert submitted['adler32'] == '32'
-    assert submitted['file_events'] == 3141
-    assert submitted['file_size'] == 1024

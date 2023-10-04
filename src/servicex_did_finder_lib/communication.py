@@ -91,12 +91,6 @@ async def run_file_fetch_loop(
     # If we've been holding onto any files, we need to send them now.
     acc.send_on(did_info.file_count)
 
-    # Simple error checking and reporting
-    if summary.file_count == 0:
-        servicex.post_status_update(
-            f"DID Finder found zero files for dataset {did}", severity="fatal"
-        )
-
     elapsed_time = int((datetime.now() - start_time).total_seconds())
     servicex.put_fileset_complete(
         {
@@ -107,11 +101,10 @@ async def run_file_fetch_loop(
             "elapsed-time": elapsed_time,
         }
     )
-    servicex.post_status_update(f"Completed load of files in {elapsed_time} seconds")
 
 
 def rabbit_mq_callback(
-    user_callback: UserDIDHandler, channel, method, properties, body, file_prefix=None
+    user_callback: UserDIDHandler, channel, method, properties, body
 ):
     """rabbit_mq_callback Respond to RabbitMQ Message
 
@@ -125,25 +118,20 @@ def rabbit_mq_callback(
         method ([type]): Delivery method
         properties ([type]): Properties of the message
         body ([type]): The body (json for us) of the message
-        file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
     """
     dataset_id = None  # set this in case we get an exception while loading request
-    request_id = None
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
         did = did_request["did"]
         dataset_id = did_request["dataset_id"]
-        request_id = did_request["request_id"]
         endpoint = did_request["endpoint"]
         __logging.info(
             f"Received DID request {did_request}",
-            extra={"request_id": request_id, "dataset_id": dataset_id}
+            extra={"dataset_id": dataset_id}
         )
-        servicex = ServiceXAdapter(request_id=request_id,
-                                   dataset_id=dataset_id,
-                                   endpoint=endpoint,
-                                   file_prefix=file_prefix)
+        servicex = ServiceXAdapter(dataset_id=dataset_id,
+                                   endpoint=endpoint)
 
         info = {
             "dataset-id": dataset_id,
@@ -155,11 +143,7 @@ def rabbit_mq_callback(
 
         except Exception as e:
             _, exec_value, _ = sys.exc_info()
-            __logging.exception("DID Request Failed", extra={"dataset_id": dataset_id})
-            servicex.post_status_update(
-                f"DID Request Failed for id {dataset_id}: " f"{str(e)} - {exec_value}",
-                severity="fatal",
-            )
+            __logging.exception(f"DID Request Failed {str(e)}", extra={"dataset_id": dataset_id})
             raise
 
     except Exception as e:
@@ -177,7 +161,6 @@ def init_rabbit_mq(
     queue_name: str,
     retries: int,
     retry_interval: float,
-    file_prefix: str = None,
 ):  # type: ignore
     rabbitmq = None
     retry_count = 0
@@ -194,7 +177,7 @@ def init_rabbit_mq(
                 queue=queue_name,
                 auto_ack=False,
                 on_message_callback=lambda c, m, p, b: rabbit_mq_callback(
-                    user_callback, c, m, p, b, file_prefix
+                    user_callback, c, m, p, b
                 ),
             )
             _channel.start_consuming()
