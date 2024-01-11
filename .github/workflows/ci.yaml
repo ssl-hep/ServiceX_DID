@@ -12,7 +12,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.9, "3.10"]
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +35,7 @@ jobs:
           poetry run coverage run -m --source=src pytest tests
           poetry run coverage xml
       - name: Report coverage using codecov
-        if: github.event_name == 'push' && matrix.python-version == 3.8
+        if: github.event_name == 'push' && matrix.python-version == 3.9
         uses: codecov/codecov-action@v3.1.4
         with:
           file: ./coverage.xml # optional
