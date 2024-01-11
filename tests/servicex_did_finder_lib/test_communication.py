@@ -93,10 +93,11 @@ def init_rabbit_callback(mocker):
 
 @pytest.fixture()
 def simple_argument_parser(mocker):
+    parser = mocker.MagicMock(spec=argparse.ArgumentParser)
+
     with patch(
         "servicex_did_finder_lib.communication.argparse.ArgumentParser", autospec=True
     ) as ctor_ArgumentParser:
-        parser = mocker.MagicMock(spec=argparse.ArgumentParser)
         ctor_ArgumentParser.return_value = parser
 
         parsed_args = mocker.MagicMock()

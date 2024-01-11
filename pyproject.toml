@@ -5,16 +5,16 @@ description = "ServiceX DID Library Routines"
 authors = ["Gordon Watts <gwatts@uw.edu>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.8"
 pika = "1.1.0"
 make-it-sync = "^1.0.0"
 requests = "^2.25.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.4.4"
 flake8 = "^3.9.1"
-pytest-mock = "^3.5.1"
-coverage = "^5.5"
+pytest-mock = "^3.12.0"
+coverage = "^7.4.0"
 responses = "^0.14.0"
 pytest-asyncio = "^0.16.0"
 
