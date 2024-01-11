@@ -26,6 +26,8 @@ QUEUE_NAME_POSTFIX = "_did_requests"
 __logging = logging.getLogger(__name__)
 __logging.addHandler(logging.NullHandler())
 
+# TODO: get rid of different modes. It should always be batch.
+
 
 class _accumulator:
     "Track or cache files depending on the mode we are operating in"
@@ -42,8 +44,6 @@ class _accumulator:
             self._file_cache.append(file_info)
         else:
             self._summary.add_file(file_info)
-            if self._summary.file_count == 1:
-                self._servicex.post_transform_start()
             self._servicex.put_file_add(file_info)
 
     def send_on(self, count):
@@ -59,8 +59,6 @@ class _accumulator:
             for f in file_list:
                 self.add(f)
         else:
-            if self._summary.file_count == 0:
-                self._servicex.post_transform_start()
             for ifl in file_list:
                 self._summary.add_file(ifl)
             self._servicex.put_file_add_bulk(file_list)
@@ -93,12 +91,6 @@ async def run_file_fetch_loop(
     # If we've been holding onto any files, we need to send them now.
     acc.send_on(did_info.file_count)
 
-    # Simple error checking and reporting
-    if summary.file_count == 0:
-        servicex.post_status_update(
-            f"DID Finder found zero files for dataset {did}", severity="fatal"
-        )
-
     elapsed_time = int((datetime.now() - start_time).total_seconds())
     servicex.put_fileset_complete(
         {
@@ -110,11 +102,9 @@ async def run_file_fetch_loop(
         }
     )
 
-    servicex.post_status_update(f"Completed load of files in {elapsed_time} seconds")
-
 
 def rabbit_mq_callback(
-    user_callback: UserDIDHandler, channel, method, properties, body, file_prefix=None
+    user_callback: UserDIDHandler, channel, method, properties, body
 ):
     """rabbit_mq_callback Respond to RabbitMQ Message
 
@@ -128,22 +118,23 @@ def rabbit_mq_callback(
         method ([type]): Delivery method
         properties ([type]): Properties of the message
         body ([type]): The body (json for us) of the message
-        file_prefix([str]): Prefix to put in front of file paths to enable use of Cache service
     """
-    request_id = None  # set this in case we get an exception while loading request
+    dataset_id = None  # set this in case we get an exception while loading request
     try:
         # Unpack the message. Really bad if we fail up here!
         did_request = json.loads(body)
         did = did_request["did"]
-        request_id = did_request["request_id"]
+        dataset_id = did_request["dataset_id"]
+        endpoint = did_request["endpoint"]
         __logging.info(
-            f"Received DID request {did_request}", extra={"requestId": request_id}
+            f"Received DID request {did_request}",
+            extra={"dataset_id": dataset_id}
         )
-        servicex = ServiceXAdapter(did_request["service-endpoint"], file_prefix)
-        servicex.post_status_update("DID Request received")
+        servicex = ServiceXAdapter(dataset_id=dataset_id,
+                                   endpoint=endpoint)
 
         info = {
-            "request-id": request_id,
+            "dataset-id": dataset_id,
         }
 
         # Process the request and resolve the DID
@@ -152,16 +143,12 @@ def rabbit_mq_callback(
 
         except Exception as e:
             _, exec_value, _ = sys.exc_info()
-            __logging.exception("DID Request Failed", extra={"requestId": request_id})
-            servicex.post_status_update(
-                f"DID Request Failed for id {request_id}: " f"{str(e)} - {exec_value}",
-                severity="fatal",
-            )
+            __logging.exception(f"DID Request Failed {str(e)}", extra={"dataset_id": dataset_id})
             raise
 
     except Exception as e:
         __logging.exception(
-            f"DID request failed {str(e)}", extra={"requestId": request_id}
+            f"DID request failed {str(e)}", extra={"dataset_id": dataset_id}
         )
 
     finally:
@@ -174,7 +161,6 @@ def init_rabbit_mq(
     queue_name: str,
     retries: int,
     retry_interval: float,
-    file_prefix: str = None,
 ):  # type: ignore
     rabbitmq = None
     retry_count = 0
@@ -191,7 +177,7 @@ def init_rabbit_mq(
                 queue=queue_name,
                 auto_ack=False,
                 on_message_callback=lambda c, m, p, b: rabbit_mq_callback(
-                    user_callback, c, m, p, b, file_prefix
+                    user_callback, c, m, p, b
                 ),
             )
             _channel.start_consuming()

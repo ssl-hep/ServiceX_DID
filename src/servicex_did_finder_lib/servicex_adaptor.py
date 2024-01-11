@@ -35,40 +35,17 @@ MAX_RETRIES = 3
 
 
 class ServiceXAdapter:
-    def __init__(self, endpoint, file_prefix=None):
+    def __init__(self, endpoint, dataset_id):
         self.endpoint = endpoint
-        self.file_prefix = file_prefix
+        self.dataset_id = dataset_id
 
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
 
-    def post_status_update(self, status_msg, severity="info"):
-        success = False
-        attempts = 0
-        while not success and attempts < MAX_RETRIES:
-            try:
-                requests.post(self.endpoint + "/status", data={
-                    "timestamp": datetime.now().isoformat(),
-                    "source": "DID Finder",
-                    "severity": severity,
-                    "info": status_msg
-                })
-                success = True
-            except requests.exceptions.ConnectionError:
-                self.logger.exception(f'Connection error to ServiceX App. Will retry '
-                                      f'(try {attempts} out of {MAX_RETRIES}')
-                attempts += 1
-        if not success:
-            self.logger.error(f'After {attempts} tries, failed to send ServiceX App a status '
-                              f'message: {str(status_msg)} - Ignoring error.')
-
-    def _prefix_file(self, file_path):
-        return file_path if not self.file_prefix else self.file_prefix+file_path
-
     def _create_json(self, file_info):
         return {
             "timestamp": datetime.now().isoformat(),
-            "paths": [self._prefix_file(fp) for fp in file_info['paths']],
+            "paths": file_info['paths'],
             'adler32': file_info['adler32'],
             'file_size': file_info['file_size'],
             'file_events': file_info['file_events']
@@ -80,8 +57,8 @@ class ServiceXAdapter:
         while not success and attempts < MAX_RETRIES:
             try:
                 mesg = self._create_json(file_info)
-                requests.put(self.endpoint + "/files", json=mesg)
-                self.logger.info(f"Metric: {json.dumps(mesg)}")
+                requests.put(f"{self.endpoint}{self.dataset_id}/files", json=mesg)
+                self.logger.info("adding file:", extra=file_info)
                 success = True
             except requests.exceptions.ConnectionError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '
@@ -103,7 +80,7 @@ class ServiceXAdapter:
                 mesg.append(self._create_json(fi))
             while not success and attempts < MAX_RETRIES:
                 try:
-                    requests.put(self.endpoint + "/files", json=mesg)
+                    requests.put(f"{self.endpoint}{self.dataset_id}/files", json=mesg)
                     self.logger.info(f"Metric: {json.dumps(mesg)}")
                     success = True
                 except requests.exceptions.ConnectionError:
@@ -114,27 +91,12 @@ class ServiceXAdapter:
                 self.logger.error(f'After {attempts} tries, failed to send ServiceX App '
                                   f'a put_file_bulk message: {mesg} - Ignoring error.')
 
-    def post_transform_start(self):
-        success = False
-        attempts = 0
-        while not success and attempts < MAX_RETRIES:
-            try:
-                requests.post(self.endpoint + "/start")
-                success = True
-            except requests.exceptions.ConnectionError:
-                self.logger.exception(f'Connection error to ServiceX App. Will retry '
-                                      f'(try {attempts} out of {MAX_RETRIES}')
-                attempts += 1
-        if not success:
-            self.logger.error(f'After {attempts} tries, failed to send ServiceX App a  '
-                              f'transform start message - Ignoring error.')
-
     def put_fileset_complete(self, summary):
         success = False
         attempts = 0
         while not success and attempts < MAX_RETRIES:
             try:
-                requests.put(self.endpoint + "/complete", json=summary)
+                requests.put(f"{self.endpoint}{self.dataset_id}/complete", json=summary)
                 success = True
             except requests.exceptions.ConnectionError:
                 self.logger.exception(f'Connection error to ServiceX App. Will retry '

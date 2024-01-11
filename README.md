@@ -28,8 +28,7 @@ Create an async callback method that `yield`s file info dictionaries. For exampl
 The arguments to the method are straight forward:
 
 * `did_name`: the name of the DID that you should look up. It has the schema stripped off (e.g. if the user sent ServiceX `rucio://dataset_name_in_rucio`, then `did_name` will be `dataset_name_in_rucio`)
-* `info` contains a dict of various info about the request that asked for this DID:
-  * `request-id` The request id that has this DID associated. For logging.
+* `info` contains a dict of various info about the request that asked for this DID.
 
 Yield the results as you find them - ServiceX will actually start processing the files before your DID lookup is finished if you do this. The fields you need to pass back to the library are as follows:
 
@@ -114,7 +113,7 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
     __log = logger.getLogger(__name__)
     async def my_callback(did_name: str, info: Dict[str, Any]):
         __log.info(f'Looking up dataset {did_name}.',
-                     extra={'requestId': info['request-id']})
+                     extra={'somethign': info['something']})
 
         for i in range(0, 10):
             yield {
@@ -125,9 +124,7 @@ In the end, all DID finders for ServiceX will run under Kubernetes. ServiceX com
             }
 ```
 
-Note the parameter `request-id`: this marks the log messages with the request id that triggered this DID request. This will enable the system to track all log messages across all containers connected with this particular request id - making debugging a lot easier.
-
-The `start_did_finder` will configure the python root logger properly to dump messages with a request ID in them.
+The `start_did_finder` will configure the python root logger properly.
 
 ## URI Format
 
