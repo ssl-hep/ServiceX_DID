@@ -114,6 +114,5 @@ dmypy.json
 .pyre/
 
 .vscode/
-poetry.lock
 
 .idea/
