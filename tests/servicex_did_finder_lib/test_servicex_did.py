@@ -66,5 +66,5 @@ def test_put_file_add_bulk_large():
         'adler32': '32',
         'file_size': 1024,
         'file_events': 3141
-    }] * 32)
+    }] * 320)
     assert len(responses.calls) == 2
