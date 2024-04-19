@@ -68,7 +68,7 @@ class ServiceXAdapter:
             self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
                               f'message: {str(file_info)} - Ignoring error.')
 
-    def put_file_add_bulk(self, file_list, chunk_length=30):
+    def put_file_add_bulk(self, file_list, chunk_length=300):
         # we first chunk up file_list as it can be very large in
         # case there are a lot of replicas and a lot of files.
         chunks = [file_list[i:i + chunk_length] for i in range(0, len(file_list), chunk_length)]
