@@ -51,23 +51,6 @@ class ServiceXAdapter:
             'file_events': file_info['file_events']
         }
 
-    def put_file_add(self, file_info):
-        success = False
-        attempts = 0
-        while not success and attempts < MAX_RETRIES:
-            try:
-                mesg = self._create_json(file_info)
-                requests.put(f"{self.endpoint}{self.dataset_id}/files", json=mesg)
-                self.logger.info("adding file:", extra=file_info)
-                success = True
-            except requests.exceptions.ConnectionError:
-                self.logger.exception(f'Connection error to ServiceX App. Will retry '
-                                      f'(try {attempts} out of {MAX_RETRIES}')
-                attempts += 1
-        if not success:
-            self.logger.error(f'After {attempts} tries, failed to send ServiceX App a put_file '
-                              f'message: {str(file_info)} - Ignoring error.')
-
     def put_file_add_bulk(self, file_list, chunk_length=300):
         # we first chunk up file_list as it can be very large in
         # case there are a lot of replicas and a lot of files.
