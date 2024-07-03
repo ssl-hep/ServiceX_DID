@@ -148,3 +148,11 @@ All the incoming DID's are expected to be URI's without the schema. As such, the
 * `get` - If the value is `all` (the default) then all files in the dataset must be returned. If the value is `available`, then only files that are accessible need be returned.
 
 As am example, if the following URI is given to ServiceX, "rucio://dataset_name?files=20&get=available", then the first 20 available files of the dataset will be processed by the rest of servicex.
+
+## Stressful DID Finder
+As an example, there is in this repo a simple DID finder that can be used to test the system. It is called `stressful_did_finder.py`. It will return a large number of files, and will take a long time to run. It is useful for testing the system under load.
+I'm not quite sure how to use it yet, but I'm sure it will be useful.
+
+It accepts the following arguments:
+* `--num-files` - The number of files to return as part of each request. Default is 10.
+* `--file-path` - The DID Finder returns the same file over and over. This is the file to return in the response
