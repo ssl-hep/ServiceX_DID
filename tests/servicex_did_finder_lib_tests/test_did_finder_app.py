@@ -75,6 +75,35 @@ def test_did_finder_task(mocker, servicex, single_file_info):
         )
 
 
+def test_did_finder_task_exception(mocker, servicex, single_file_info):
+    did_finder_task = DIDFinderTask()
+    # did_finder_task.app = mocker.Mock()
+    did_finder_task.app.did_finder_args = {}
+    mock_generator = mocker.Mock(side_effect=Exception("Boom"))
+
+    mock_accumulator = mocker.MagicMock(Accumulator)
+    with patch(
+        "servicex_did_finder_lib.did_finder_app.Accumulator", autospec=True
+    ) as acc:
+        acc.return_value = mock_accumulator
+        did_finder_task.do_lookup('did', 1, 'https://my-servicex', mock_generator)
+        servicex.assert_called_with(dataset_id=1, endpoint="https://my-servicex")
+        acc.assert_called_once()
+
+        mock_accumulator.add.assert_not_called()
+        mock_accumulator.send_on.assert_not_called()
+
+        servicex.return_value.put_fileset_complete.assert_called_with(
+            {
+                "files": 0,  # Aught to have a side effect in mock accumulator that updates this
+                "files-skipped": 0,
+                "total-events": 0,
+                "total-bytes": 0,
+                "elapsed-time": 0,
+            }
+        )
+
+
 def test_did_finder_app(mocker, monkeypatch):
     # Temporarily replace sys.argv with mock_args
     monkeypatch.setattr(sys, 'argv', [
