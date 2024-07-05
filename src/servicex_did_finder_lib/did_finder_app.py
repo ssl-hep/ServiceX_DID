@@ -102,8 +102,9 @@ class DIDFinderTask(Task):
             acc.send_on(did_info.file_count)
         except Exception as e:
             self.logger.error(
-                f"Error processing DID {did}: {e}",
-                extra={"dataset_id": dataset_id}
+                f"Error processing DID {did}",
+                extra={"dataset_id": dataset_id},
+                exc_info=1
             )
         finally:
             elapsed_time = int((datetime.now() - start_time).total_seconds())
