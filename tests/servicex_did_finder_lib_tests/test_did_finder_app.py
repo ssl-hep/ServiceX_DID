@@ -119,5 +119,10 @@ def test_did_finder_app(mocker, monkeypatch):
         celery.return_value = mock_celery_app
         app = DIDFinderApp(did_finder_name="pytest", parsed_args=None)
         app.start()
-        celery.assert_called_with("did_finder_pytest", broker_url="my-rabbit")
-        mock_celery_app.worker_main.assert_called_with(argv=['worker', '--loglevel=INFO'])
+        celery.assert_called_with("did_finder_pytest",
+                                  broker_connection_retry_on_startup=True,
+                                  broker_url="my-rabbit")
+        mock_celery_app.worker_main.assert_called_with(argv=['worker',
+                                                             '--loglevel=INFO',
+                                                             '-Q', 'did_finder_pytest',
+                                                             '-n', 'pytest@%h'])

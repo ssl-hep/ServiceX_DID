@@ -101,6 +101,7 @@ class DIDFinderTask(Task):
 
             acc.send_on(did_info.file_count)
         except Exception:
+            # noinspection PyTypeChecker
             self.logger.error(
                 f"Error processing DID {did}",
                 extra={"dataset_id": dataset_id},
@@ -144,7 +145,9 @@ class DIDFinderApp:
 
         initialize_root_logger(self.name)
 
-        self.app = Celery(f"did_finder_{self.name}", broker_url=self.parsed_args['rabbit_uri'])
+        self.app = Celery(f"did_finder_{self.name}",
+                          broker_url=self.parsed_args['rabbit_uri'],
+                          broker_connection_retry_on_startup=True)
 
         # Cache the args in the App so they are accessible to the tasks
         self.app.did_finder_args = self.parsed_args
@@ -170,7 +173,11 @@ class DIDFinderApp:
         return decorator
 
     def start(self):
-        self.app.worker_main(argv=['worker', '--loglevel=INFO'])
+        self.app.worker_main(argv=['worker',
+                                   '--loglevel=INFO',
+                                   '-Q', f'did_finder_{self.name}',
+                                   '-n', f'{self.name}@%h'
+                                   ])
 
     @classmethod
     def add_did_finder_cnd_arguments(cls, parser: argparse.ArgumentParser):
