@@ -25,7 +25,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import argparse
 import logging
 from datetime import datetime
 from typing import Any, Generator, Callable, Dict, Optional
@@ -120,37 +119,31 @@ class DIDFinderTask(Task):
             )
 
 
-class DIDFinderApp:
+class DIDFinderApp(Celery):
     """
     The main application for a DID finder. This will setup the Celery application
     and start the worker to process the DID requests.
     """
     def __init__(self, did_finder_name: str,
-                 parsed_args: Optional[argparse.Namespace] = None):
+                 did_finder_args: Optional[Dict[str, Any]] = None,
+                 *args, **kwargs):
         """
         Initialize the DID finder application
         Args:
-            did_finder_name: The name of the DID finder
-            parsed_args: The parsed command line arguments. Leave as None to use the default parser
+            did_finder_name: The name of the DID finder.
+            did_finder_args: The parsed command line arguments and other objects you want
+            to make available to the tasks
         """
 
         self.name = did_finder_name
-        self.parsed_args = vars(parsed_args) if parsed_args else None
-
-        # Setup command line parsing
-        if self.parsed_args is None:
-            parser = argparse.ArgumentParser()
-            self.add_did_finder_cnd_arguments(parser)
-            self.parsed_args = vars(parser.parse_args())
-
         initialize_root_logger(self.name)
 
-        self.app = Celery(f"did_finder_{self.name}",
-                          broker_url=self.parsed_args['rabbit_uri'],
-                          broker_connection_retry_on_startup=True)
+        super().__init__(f"did_finder_{self.name}", *args,
+                         broker_connection_retry_on_startup=True,
+                         **kwargs)
 
-        # Cache the args in the App so they are accessible to the tasks
-        self.app.did_finder_args = self.parsed_args
+        # Cache the args in the App, so they are accessible to the tasks
+        self.did_finder_args = did_finder_args
 
     def did_lookup_task(self, name):
         """
@@ -166,41 +159,8 @@ class DIDFinderApp:
             name: The name of the task
         """
         def decorator(func):
-            @self.app.task(base=DIDFinderTask, bind=True, name=name)
+            @self.task(base=DIDFinderTask, bind=True, name=name)
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
             return wrapper
         return decorator
-
-    def start(self):
-        self.app.worker_main(argv=['worker',
-                                   '--loglevel=INFO',
-                                   '-Q', f'did_finder_{self.name}',
-                                   '-n', f'{self.name}@%h'
-                                   ])
-
-    @classmethod
-    def add_did_finder_cnd_arguments(cls, parser: argparse.ArgumentParser):
-        """add_did_finder_cnd_arguments Add required arguments to a parser
-
-        If you need to parse command line arguments for some special configuration, create your
-        own argument parser, and call this function to make sure the arguments needed
-        for running the back-end communication are filled in properly.
-
-        Then pass the results of the parsing to the DID Finder App's constructor method.
-
-        Args:
-            parser (argparse.ArgumentParser): The argument parser. Arguments needed for the
-                                              did finder/servicex communication will be added.
-        """
-        parser.add_argument(
-            "--rabbit-uri", dest="rabbit_uri", action="store", required=True
-        )
-        parser.add_argument(
-            "--prefix",
-            dest="prefix",
-            action="store",
-            required=False,
-            default="",
-            help="Prefix to add to use a caching proxy for URIs",
-        )
