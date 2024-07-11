@@ -28,14 +28,31 @@ by adding the following to your `pyproject.tom` file:
 servicex-did-finder-lib = "^3.0"
 ```
 
-Create a script that will run your DID. It needs to contain your generator function that adheres
-to the UserDIDHandler signature:
+Create a celery app that will run your DID finder. This app will be responsible for starting the
+Celery worker and registering your DID finder function as a task. Here is an example of how to do
+this. Celery prefers that the app is in a file called `celery.py` in a module in your project. Here
+is an example of how to do this:
+
+## celery.py:
 ```python
-UserDIDHandler = Callable[
-    [str, Dict[str, Any], Dict[str, Any]], 
-    Generator[Dict[str, Any], None, None]
-]
+
+from servicex_did_finder_lib import DIDFinderApp
+rucio_adaptor = RucioAdaptor()
+app = DIDFinderApp('rucio', did_finder_args={"rucio_adapter": rucio_adaptor})
 ```
+
+Attach the DID finder to the app by using the `did_lookup_task` decorator. This decorator will
+register the function as a Celery task. Here is an example of how to do this:
+
+```python
+@app.did_lookup_task(name="did_finder_rucio.lookup_dataset")
+def lookup_dataset(self, did: str, dataset_id: int, endpoint: str) -> None:
+    self.do_lookup(did=did, dataset_id=dataset_id,
+                   endpoint=endpoint, user_did_finder=find_files)
+```
+
+You will need to implement the `find_files` function. This function is a generator that yields
+file information dictionaries.
 
 The arguments to the method are straight forward:
 
@@ -74,43 +91,20 @@ def find_files(did_name: str,
         }
 ```
 
-There is a small amount of additional boilerplate code that is required to create a DID Finder. This
-is the code that will create the Celery app and register your function as a task. Here is an 
-example (which assumes that `find_files` is your DID handler):
-```python
-from servicex_did_finder_lib import DIDFinderApp
-
-app = DIDFinderApp('cernopendata')
-
-@app.did_lookup_task(name="did_finder_cern_opendata.lookup_dataset")
-def lookup_dataset(self, did: str, dataset_id: int, endpoint: str) -> None:
-    self.do_lookup(did=did, dataset_id=dataset_id,
-                   endpoint=endpoint, user_did_finder=find_files)
-
-app.start()
-```
 
 ## Extra Command Line Arguments
 Sometimes you need to pass additional information to your DID Finder from the command line. You do
-this by creating your own `ArgParser` and then calling the `add_did_finder_cnd_arguments` method
-which inserts the arguments that the library needs to pass to the finder. Here is an example:
-
+this by creating your own `ArgParser` 
 ```python
 import argparse
-from servicex_did_finder_lib import DIDFinderApp
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description='DIDFinderApp')
+parser.add_argument('--custom-arg', help='Custom argument for DIDFinderApp')
+args, unknown = parser.parse_known_args()
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--foo', dest='foo', action='store',
-                    default='',
-                    help='Prefix to add to Xrootd URLs')
+# Create the app instance
+app = DIDFinderApp('myApp', did_finder_args={"custom-arg": args.custom_arg})
 
-DIDFinderApp.add_did_finder_cnd_arguments(parser)
-
-```
-
-You then just pass the dictionary of parsed args to your app constructor:
-```python
-app = DIDFinderApp('cernopendata', parsed_args=parser.parse_args())
 ```
 
 These parsed args will be passed to your `find_files` function as a dictionary in 
