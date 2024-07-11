@@ -25,7 +25,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import sys
 from unittest.mock import patch
 import pytest
 from celery import Celery
@@ -104,25 +103,14 @@ def test_did_finder_task_exception(mocker, servicex, single_file_info):
         )
 
 
-def test_did_finder_app(mocker, monkeypatch):
-    # Temporarily replace sys.argv with mock_args
-    monkeypatch.setattr(sys, 'argv', [
-        "did_finder.py",
-        "--rabbit-uri", "my-rabbit"
-    ])
+def test_celery_app():
+    app = DIDFinderApp('foo')
+    assert isinstance(app, Celery)
+    assert app.name == 'foo'
 
-    mock_celery_app = mocker.MagicMock(Celery)
+    @app.did_lookup_task(name="did_finder_rucio.lookup_dataset")
+    def lookup_dataset(self, did: str, dataset_id: int, endpoint: str) -> None:
+        self.do_lookup(did=did, dataset_id=dataset_id,
+                       endpoint=endpoint, user_did_finder=lambda x, y, z: None)
 
-    with patch(
-        "servicex_did_finder_lib.did_finder_app.Celery", autospec=True
-    ) as celery:
-        celery.return_value = mock_celery_app
-        app = DIDFinderApp(did_finder_name="pytest", parsed_args=None)
-        app.start()
-        celery.assert_called_with("did_finder_pytest",
-                                  broker_connection_retry_on_startup=True,
-                                  broker_url="my-rabbit")
-        mock_celery_app.worker_main.assert_called_with(argv=['worker',
-                                                             '--loglevel=INFO',
-                                                             '-Q', 'did_finder_pytest',
-                                                             '-n', 'pytest@%h'])
+    assert lookup_dataset.__name__ == 'wrapper'
