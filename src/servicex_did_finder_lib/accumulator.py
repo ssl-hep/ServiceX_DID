@@ -63,7 +63,11 @@ class Accumulator:
 
         # Sort the list to insure reproducibility
         files = sorted(self.file_cache, key=lambda x: x["paths"])
-        self.send_bulk(files[:count])
+        if count == -1:
+            self.send_bulk(files)
+        else:
+            self.send_bulk(files[:count])
+
         self.file_cache.clear()
 
     def send_bulk(self, file_list: List[Dict[str, Any]]):
