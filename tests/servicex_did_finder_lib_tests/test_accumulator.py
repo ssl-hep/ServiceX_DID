@@ -56,8 +56,19 @@ def test_add_list_of_files(servicex, did_summary_obj, single_file_info):
 
 def test_send_on(servicex, did_summary_obj, single_file_info):
     acc = Accumulator(sx=servicex, sum=did_summary_obj)
-    acc.add([single_file_info, single_file_info, single_file_info])
+    acc.add([single_file_info, single_file_info, single_file_info, single_file_info])
     acc.send_on(3)
+    servicex.put_file_add_bulk.assert_called_with(
+        [single_file_info, single_file_info, single_file_info]
+    )
+    assert acc.cache_len == 0
+    assert acc.summary.file_count == 3
+
+
+def test_send_on_all_files(servicex, did_summary_obj, single_file_info):
+    acc = Accumulator(sx=servicex, sum=did_summary_obj)
+    acc.add([single_file_info, single_file_info, single_file_info])
+    acc.send_on(-1)
     servicex.put_file_add_bulk.assert_called_with(
         [single_file_info, single_file_info, single_file_info]
     )
