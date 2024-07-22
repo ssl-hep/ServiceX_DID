@@ -51,7 +51,10 @@ class _accumulator:
         if self._hold_till_end:
             self._hold_till_end = False
             files = sorted(self._file_cache, key=lambda x: x["paths"])
-            self.send_bulk(files[:count])
+            if count == -1:
+                self.send_bulk(files)
+            else:
+                self.send_bulk(files[:count])
 
     def send_bulk(self, file_list: List[Dict[str, Any]]):
         "does a bulk put of files"
