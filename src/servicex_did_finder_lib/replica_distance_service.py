@@ -151,8 +151,8 @@ class ReplicaSorter(object):
                 self._tmpdir = tempfile.TemporaryDirectory()
                 tarball.extractall(self._tmpdir.name)
                 self._reader = geoip2.database.Reader(glob.glob(os.path.join(self._tmpdir.name,
-                                                                            '*/*mmdb')
-                                                               )[0])
+                                                                             '*/*mmdb')
+                                                                )[0])
         except Exception as e:
             logger.error(f'Failure initializing the GeoIP database reader.\nError: {e}')
             self._reader = None
