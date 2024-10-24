@@ -9,7 +9,7 @@ python = "^3.8.1"
 make-it-sync = "^1.0.0"
 requests = "^2.25.0"
 Celery= "^5.4"
-
+geoip2 = "^4.7.0"
 
 [tool.poetry.group.dev]
 optional = true
