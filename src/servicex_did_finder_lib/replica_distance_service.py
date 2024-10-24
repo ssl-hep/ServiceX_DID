@@ -35,6 +35,7 @@ from functools import lru_cache
 import tempfile
 from urllib.parse import urlparse
 import geoip2.database
+import geoip2.errors
 
 logger = logging.getLogger('ReplicaDistanceService')
 
@@ -58,7 +59,11 @@ def _get_distance(reader: Optional[geoip2.database.Reader],
     """
     if reader is None:
         return math.pi
-    loc_data = reader.city(gethostbyname(fqdn)).location
+    try:
+        loc_data = reader.city(gethostbyname(fqdn)).location
+    except geoip2.errors.AddressNotFoundError as e:
+        logger.warning(f'Cannot geolocate {fqdn}, returning maximum distance.\nError: {e}')
+        return math.pi
     site_lat, site_lon = loc_data.latitude, loc_data.longitude
     if site_lat is None or site_lon is None:
         return math.pi
@@ -80,7 +85,7 @@ class ReplicaSorter(object):
             db_url_tuple = self.get_download_url_from_environment()
         self._download_data(db_url_tuple)
 
-    def lookup_dataset(self, replicas: List[str], location: Mapping[str, str]) -> List[str]:
+    def sort_replicas(self, replicas: List[str], location: Mapping[str, float]) -> List[str]:
         """
         Main method of this class.
         replicas: list of strings which are the URLs for the replicas for a file
@@ -133,13 +138,22 @@ class ReplicaSorter(object):
         if db_url_tuple is None:
             return
         url, unpacked = db_url_tuple
-        fname, _ = urlretrieve(url)
-        if unpacked:
-            self.reader = geoip2.database.Reader(fname)
-        else:
-            tarball = tarfile.open(fname)
-            self._tmpdir = tempfile.TemporaryDirectory()
-            tarball.extractall(self._tmpdir.name)
-            self.reader = geoip2.database.Reader(glob.glob(os.path.join(self._tmpdir.name,
-                                                                        '*/*mmdb')
-                                                           )[0])
+        try:
+            fname, _ = urlretrieve(url)
+        except Exception as e:
+            logger.error(f'Failure retrieving GeoIP database {url}.\nError: {e}')
+            return
+        try:
+            if unpacked:
+                self.reader = geoip2.database.Reader(fname)
+            else:
+                tarball = tarfile.open(fname)
+                self._tmpdir = tempfile.TemporaryDirectory()
+                tarball.extractall(self._tmpdir.name)
+                self.reader = geoip2.database.Reader(glob.glob(os.path.join(self._tmpdir.name,
+                                                                            '*/*mmdb')
+                                                               )[0])
+        except Exception as e:
+            logger.error(f'Failure initializing the GeoIP database reader.\nError: {e}')
+            self.reader = None
+            return
