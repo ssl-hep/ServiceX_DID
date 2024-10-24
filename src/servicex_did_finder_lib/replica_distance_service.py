@@ -92,7 +92,8 @@ class ReplicaSorter(object):
         if len(replicas) == 1:
             return replicas
         fqdns = [(urlparse(replica).hostname, replica) for replica in replicas]
-        distances = [(_get_distance(fqdn, location['latitude'], location['longitude']),
+        distances = [(_get_distance(self.reader, fqdn, location['latitude'],
+                                    location['longitude']),
                       replica) for fqdn, replica in fqdns]
         distances.sort()
         return [replica for _, replica in distances]
