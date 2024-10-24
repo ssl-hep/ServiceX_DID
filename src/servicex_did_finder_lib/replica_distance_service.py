@@ -92,12 +92,12 @@ class ReplicaSorter(object):
         location: dict of the form {'latitude': xxx, 'longitude': yyy} where xxx and yyy are floats
         giving the latitude and longitude in signed degrees
         """
-        if not self.reader:
+        if not self._reader:
             return replicas
         if len(replicas) == 1:
             return replicas
         fqdns = [(urlparse(replica).hostname, replica) for replica in replicas]
-        distances = [(_get_distance(self.reader, fqdn, location['latitude'],
+        distances = [(_get_distance(self._reader, fqdn, location['latitude'],
                                     location['longitude']),
                       replica) for fqdn, replica in fqdns]
         distances.sort()
@@ -145,15 +145,15 @@ class ReplicaSorter(object):
             return
         try:
             if unpacked:
-                self.reader = geoip2.database.Reader(fname)
+                self._reader = geoip2.database.Reader(fname)
             else:
                 tarball = tarfile.open(fname)
                 self._tmpdir = tempfile.TemporaryDirectory()
                 tarball.extractall(self._tmpdir.name)
-                self.reader = geoip2.database.Reader(glob.glob(os.path.join(self._tmpdir.name,
+                self._reader = geoip2.database.Reader(glob.glob(os.path.join(self._tmpdir.name,
                                                                             '*/*mmdb')
                                                                )[0])
         except Exception as e:
             logger.error(f'Failure initializing the GeoIP database reader.\nError: {e}')
-            self.reader = None
+            self._reader = None
             return
