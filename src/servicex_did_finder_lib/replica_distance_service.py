@@ -110,7 +110,7 @@ class ReplicaSorter(object):
     @classmethod
     def get_download_url_from_environment(cls) -> Optional[Tuple[str, bool]]:
         """
-        Based on environment variables, this will give a tuple of the URL and a bool which is 
+        Based on environment variables, this will give a tuple of the URL and a bool which is
         True if the file from the URL is ready to use as is, False if needs to be unpacked
         """
         if url := os.environ.get('GEOIP_DB_URL', ''):
