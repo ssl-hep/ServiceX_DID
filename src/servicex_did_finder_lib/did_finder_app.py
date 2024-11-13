@@ -97,8 +97,11 @@ class DIDFinderTask(Task):
         try:
             for file_info in user_did_finder(did_info.did, info, self.app.did_finder_args):
                 acc.add(file_info)
+                if did_info.file_count == -1:
+                    acc.send_on(-1)  # if looking up full dataset, can send partial results
 
-            acc.send_on(did_info.file_count)
+            if did_info.file_count > 0:  # otherwise wait until all files arrive, then limit results
+                acc.send_on(did_info.file_count)
         except Exception:
             # noinspection PyTypeChecker
             self.logger.error(
