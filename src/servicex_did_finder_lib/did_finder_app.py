@@ -100,7 +100,7 @@ class DIDFinderTask(Task):
                 if did_info.file_count == -1:
                     acc.send_on(-1)  # if looking up full dataset, can send partial results
 
-            if did_info.file_count > 0:  # otherwise wait until all files arrive, then limit results
+            if did_info.file_count > 0:  # otherwise wait until all files arrive then limit results
                 acc.send_on(did_info.file_count)
         except Exception:
             # noinspection PyTypeChecker
